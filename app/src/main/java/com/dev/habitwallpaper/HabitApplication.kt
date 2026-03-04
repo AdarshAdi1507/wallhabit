@@ -12,7 +12,9 @@ class HabitApplication : Application() {
             this,
             HabitDatabase::class.java,
             HabitDatabase.DATABASE_NAME
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     val repository: HabitRepository by lazy {

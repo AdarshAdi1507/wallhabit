@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,7 +26,8 @@ import java.time.ZoneId
 @Composable
 fun HabitSetupScreen(
     viewModel: HabitViewModel,
-    onHabitCreated: () -> Unit
+    onHabitCreated: () -> Unit,
+    onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val customDuration by viewModel.customDuration.collectAsState()
@@ -39,6 +41,22 @@ fun HabitSetupScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("New Habit", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
         bottomBar = {
             Button(
                 onClick = { viewModel.saveHabit() },

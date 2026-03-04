@@ -7,5 +7,9 @@ data class Habit(
     val name: String,
     val durationDays: Int,
     val startDate: LocalDate,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isCompletedToday: Boolean = false,
+    val currentStreak: Int = 0,
+    val completedDates: List<LocalDate> = emptyList(),
+    val isWallpaperSelected: Boolean = false
 )

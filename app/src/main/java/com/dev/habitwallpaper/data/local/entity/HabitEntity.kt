@@ -9,6 +9,7 @@ data class HabitEntity(
     val id: Long = 0,
     val name: String,
     val durationDays: Int,
-    val startDate: Long, // Store as epoch millis
-    val createdAt: Long
+    val startDate: Long,
+    val createdAt: Long,
+    val isWallpaperSelected: Boolean = false
 )

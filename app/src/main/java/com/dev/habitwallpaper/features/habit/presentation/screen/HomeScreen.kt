@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dev.habitwallpaper.core.designsystem.HabitColors
+import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
@@ -292,7 +294,7 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                     Text(
                         "${habit.currentStreak} day streak",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFFF9800),
+                        color = HabitColors.STREAK_ORANGE.toCompose(),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -336,7 +338,7 @@ fun HabitHeatMapV2(habit: Habit) {
                     .weight(1f)
                     .aspectRatio(1f)
                     .background(
-                        color = if (isCompleted) MaterialTheme.colorScheme.primary else Color(0xFFF0F0F0),
+                        color = if (isCompleted) HabitColors.GRID_HIGH.toCompose() else HabitColors.GRID_EMPTY.toCompose(),
                         shape = RoundedCornerShape(4.dp)
                     )
             )

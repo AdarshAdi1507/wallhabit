@@ -6,7 +6,14 @@ import java.time.LocalDate
 data class WallpaperState(
     val habitName: String,
     val streakCount: Int,
-    val completionGrid: List<Boolean> // Last 30 days
+    val completionGrid: List<GridCellState>
+)
+
+data class GridCellState(
+    val isCompleted: Boolean = false,
+    val isToday: Boolean = false,
+    val isFuture: Boolean = false,
+    val isPadding: Boolean = false
 )
 
 class GenerateWallpaperStateUseCase {
@@ -14,8 +21,27 @@ class GenerateWallpaperStateUseCase {
         if (habit == null) return null
         
         val today = LocalDate.now()
-        val last30Days = (0..29).reversed().map { today.minusDays(it.toLong()) }
-        val grid = last30Days.map { habit.completedDates.contains(it) }
+        val firstDayOfWeek = habit.startDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
+        val paddingDays = firstDayOfWeek - 1
+        
+        val grid = mutableListOf<GridCellState>()
+        
+        // Add padding for the first week to align with Monday
+        repeat(paddingDays) {
+            grid.add(GridCellState(isPadding = true))
+        }
+        
+        // Add actual habit days
+        for (i in 0 until habit.durationDays) {
+            val date = habit.startDate.plusDays(i.toLong())
+            grid.add(
+                GridCellState(
+                    isCompleted = habit.completedDates.contains(date),
+                    isToday = date == today,
+                    isFuture = date.isAfter(today)
+                )
+            )
+        }
         
         return WallpaperState(
             habitName = habit.name,

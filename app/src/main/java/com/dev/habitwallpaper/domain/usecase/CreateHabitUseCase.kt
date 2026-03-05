@@ -6,7 +6,7 @@ import com.dev.habitwallpaper.domain.repository.HabitRepository
 class CreateHabitUseCase(
     private val repository: HabitRepository
 ) {
-    suspend operator fun invoke(habit: Habit) {
-        repository.insertHabit(habit)
+    suspend operator fun invoke(habit: Habit): Long {
+        return repository.insertHabit(habit)
     }
 }

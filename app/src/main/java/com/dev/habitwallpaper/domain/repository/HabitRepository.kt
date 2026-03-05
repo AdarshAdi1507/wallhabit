@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 interface HabitRepository {
-    suspend fun insertHabit(habit: Habit)
+    suspend fun insertHabit(habit: Habit): Long
     fun getAllHabits(): Flow<List<Habit>>
     fun getHabitById(id: Long): Flow<Habit?>
     fun getWallpaperHabit(): Flow<Habit?>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1051430066537",
+    "project_id": "habit-wallpaper",
+    "storage_bucket": "habit-wallpaper.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051430066537:android:cdb1cbd5cee7b83a9205f8",
+        "android_client_info": {
+          "package_name": "com.dev.habitwallpaper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzb1AQcMo845gX-pr7u0BXRv6841B5SHE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

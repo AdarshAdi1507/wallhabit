@@ -6,7 +6,7 @@ import com.dev.habitwallpaper.data.local.dao.HabitDao
 import com.dev.habitwallpaper.data.local.entity.CompletionEntity
 import com.dev.habitwallpaper.data.local.entity.HabitEntity
 
-@Database(entities = [HabitEntity::class, CompletionEntity::class], version = 3, exportSchema = false)
+@Database(entities = [HabitEntity::class, CompletionEntity::class], version = 5, exportSchema = false)
 abstract class HabitDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
 

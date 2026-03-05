@@ -10,6 +10,8 @@ data class HabitEntity(
     val name: String,
     val durationDays: Int,
     val startDate: Long,
+    val reminderTime: Long? = null,
+    val reminderDays: String? = null, // Store as comma-separated day numbers (1-7)
     val createdAt: Long,
     val isWallpaperSelected: Boolean = false
 )

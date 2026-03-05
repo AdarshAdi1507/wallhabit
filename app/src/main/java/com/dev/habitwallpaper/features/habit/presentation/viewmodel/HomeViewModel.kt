@@ -14,6 +14,11 @@ import java.time.LocalDate
 
 data class HomeUiState(
     val habits: List<Habit> = emptyList(),
+    val focusHabit: Habit? = null,
+    val completedCount: Int = 0,
+    val totalCount: Int = 0,
+    val wallpaperHabit: Habit? = null,
+    val weeklyConsistency: Float = 0f,
     val isLoading: Boolean = true
 )
 
@@ -23,8 +28,35 @@ class HomeViewModel(
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = getHabitsUseCase()
-        .map { habits -> 
-            HomeUiState(habits = habits, isLoading = false) 
+        .map { habits ->
+            val totalCount = habits.size
+            val completedCount = habits.count { it.isCompletedToday }
+            
+            // Focus habit: first uncompleted habit, or first habit if all completed
+            val focusHabit = habits.firstOrNull { !it.isCompletedToday } ?: habits.firstOrNull()
+            
+            val wallpaperHabit = habits.find { it.isWallpaperSelected }
+            
+            // Weekly consistency (last 7 days)
+            val today = LocalDate.now()
+            val last7Days = (0..6).map { today.minusDays(it.toLong()) }
+            val totalCheckinsPossible = habits.size * 7
+            val actualCheckins = habits.sumOf { habit ->
+                last7Days.count { date -> habit.completedDates.contains(date) }
+            }
+            val weeklyConsistency = if (totalCheckinsPossible > 0) {
+                actualCheckins.toFloat() / totalCheckinsPossible
+            } else 0f
+
+            HomeUiState(
+                habits = habits,
+                focusHabit = focusHabit,
+                completedCount = completedCount,
+                totalCount = totalCount,
+                wallpaperHabit = wallpaperHabit,
+                weeklyConsistency = weeklyConsistency,
+                isLoading = false
+            )
         }
         .stateIn(
             scope = viewModelScope,

@@ -8,13 +8,15 @@ import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 
 class HabitRepositoryImpl(
     private val habitDao: HabitDao
 ) : HabitRepository {
-    override suspend fun insertHabit(habit: Habit) {
-        habitDao.insertHabit(habit.toEntity())
+    override suspend fun insertHabit(habit: Habit): Long {
+        return habitDao.insertHabit(habit.toEntity())
     }
 
     override fun getAllHabits(): Flow<List<Habit>> {
@@ -71,6 +73,8 @@ class HabitRepositoryImpl(
         name = name,
         durationDays = durationDays,
         startDate = startDate.toEpochDay(),
+        reminderTime = reminderTime?.let { (it.hour * 60 + it.minute).toLong() },
+        reminderDays = reminderDays.joinToString(",") { it.value.toString() }.ifEmpty { null },
         createdAt = createdAt,
         isWallpaperSelected = isWallpaperSelected
     )
@@ -78,11 +82,21 @@ class HabitRepositoryImpl(
     private fun HabitWithCompletions.toDomain(): Habit {
         val completions = this.completions.map { LocalDate.ofEpochDay(it.date) }
         val today = LocalDate.now()
+        val reminderLocalTime = this.habit.reminderTime?.let {
+            LocalTime.of((it / 60).toInt(), (it % 60).toInt())
+        }
+        
+        val daysList = this.habit.reminderDays?.split(",")?.map { 
+            DayOfWeek.of(it.toInt()) 
+        } ?: emptyList()
+        
         return Habit(
             id = this.habit.id,
             name = this.habit.name,
             durationDays = this.habit.durationDays,
             startDate = LocalDate.ofEpochDay(this.habit.startDate),
+            reminderTime = reminderLocalTime,
+            reminderDays = daysList,
             createdAt = this.habit.createdAt,
             isCompletedToday = completions.contains(today),
             currentStreak = calculateStreak(completions),

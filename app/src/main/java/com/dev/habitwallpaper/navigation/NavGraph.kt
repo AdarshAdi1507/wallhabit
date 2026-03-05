@@ -1,6 +1,8 @@
 package com.dev.habitwallpaper.navigation
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -15,6 +17,7 @@ import com.dev.habitwallpaper.features.habit.presentation.detail.HabitDetailScre
 import com.dev.habitwallpaper.features.habit.presentation.detail.HabitDetailViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.dev.habitwallpaper.core.notification.AlarmScheduler
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
 
@@ -31,13 +34,14 @@ fun NavGraph(
     navController: NavHostController,
     repository: HabitRepository
 ) {
+    val context = LocalContext.current
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
             val viewModel: HomeViewModel = viewModel(
-                factory = HabitViewModelFactory(repository)
+                factory = HabitViewModelFactory(repository, context)
             )
             HomeScreen(
                 viewModel = viewModel,
@@ -51,7 +55,7 @@ fun NavGraph(
         }
         composable(Screen.HabitSetup.route) {
             val viewModel: HabitViewModel = viewModel(
-                factory = HabitViewModelFactory(repository)
+                factory = HabitViewModelFactory(repository, context)
             )
             HabitSetupScreen(
                 viewModel = viewModel,
@@ -82,13 +86,17 @@ fun NavGraph(
 }
 
 class HabitViewModelFactory(
-    private val repository: HabitRepository
+    private val repository: HabitRepository,
+    private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(HabitViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
-                HabitViewModel(CreateHabitUseCase(repository)) as T
+                HabitViewModel(
+                    CreateHabitUseCase(repository),
+                    AlarmScheduler(context)
+                ) as T
             }
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")

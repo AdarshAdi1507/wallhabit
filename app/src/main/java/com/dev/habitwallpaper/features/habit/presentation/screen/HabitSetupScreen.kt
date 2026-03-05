@@ -1,26 +1,39 @@
 package com.dev.habitwallpaper.features.habit.presentation.screen
 
+import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.utils.DateUtils
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitViewModel
+import java.time.DayOfWeek
 import java.time.Instant
-import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -32,7 +45,10 @@ fun HabitSetupScreen(
     val uiState by viewModel.uiState.collectAsState()
     val customDuration by viewModel.customDuration.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     var isCustomSelected by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val is24Hour = DateFormat.is24HourFormat(context)
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -82,9 +98,12 @@ fun HabitSetupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            
             Text(
                 text = "Create Your Habit",
                 style = MaterialTheme.typography.displaySmall,
@@ -147,14 +166,10 @@ fun HabitSetupScreen(
                     onClick = { showDatePicker = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.outlinedCardColors(
-                        containerColor = Color.Transparent
-                    )
+                    colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -162,11 +177,88 @@ fun HabitSetupScreen(
                             text = DateUtils.formatDate(uiState.startDate),
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Select Date",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Icon(imageVector = Icons.Default.DateRange, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            // --- REMINDER SECTION ---
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Reminders", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Switch(
+                        checked = uiState.isReminderEnabled,
+                        onCheckedChange = { viewModel.onReminderEnabledChange(it) }
+                    )
+                }
+
+                AnimatedVisibility(visible = uiState.isReminderEnabled) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // Daily vs Weekly toggle
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            SegmentedButton(
+                                selected = uiState.isDaily,
+                                onClick = { viewModel.onReminderModeChange(true) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                            ) { Text("Daily") }
+                            SegmentedButton(
+                                selected = !uiState.isDaily,
+                                onClick = { viewModel.onReminderModeChange(false) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                            ) { Text("Specific Days") }
+                        }
+
+                        // Day Selector (visible if not Daily)
+                        AnimatedVisibility(visible = !uiState.isDaily) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                DayOfWeek.entries.forEach { day ->
+                                    val isSelected = uiState.reminderDays.contains(day)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                            .clickable { viewModel.toggleReminderDay(day) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = day.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Time Picker Card
+                        OutlinedCard(
+                            onClick = { showTimePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val time = uiState.reminderTime ?: LocalTime.of(9, 0)
+                                val formatter = if (is24Hour) DateTimeFormatter.ofPattern("HH:mm") else DateTimeFormatter.ofPattern("hh:mm a")
+                                Text(
+                                    text = time.format(formatter),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                     }
                 }
             }
@@ -179,6 +271,7 @@ fun HabitSetupScreen(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -195,17 +288,50 @@ fun HabitSetupScreen(
                         viewModel.onStartDateChange(date)
                     }
                     showDatePicker = false
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (showTimePicker) {
+        val initialTime = uiState.reminderTime ?: LocalTime.of(9, 0)
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialTime.hour,
+            initialMinute = initialTime.minute,
+            is24Hour = is24Hour
+        )
+        
+        var showDial by remember { mutableStateOf(true) }
+
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onReminderTimeChange(LocalTime.of(timePickerState.hour, timePickerState.minute))
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (showDial) {
+                        TimePicker(state = timePickerState)
+                    } else {
+                        TimeInput(state = timePickerState)
+                    }
+                    TextButton(
+                        onClick = { showDial = !showDial },
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Text(if (showDial) "Switch to Text Input" else "Switch to Clock")
+                    }
                 }
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        )
     }
 }

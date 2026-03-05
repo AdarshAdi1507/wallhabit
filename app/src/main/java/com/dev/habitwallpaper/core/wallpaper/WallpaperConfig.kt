@@ -1,20 +1,22 @@
 package com.dev.habitwallpaper.core.wallpaper
 
-import android.graphics.Color
+import com.dev.habitwallpaper.core.designsystem.HabitColors
+import com.dev.habitwallpaper.core.designsystem.HabitTypography
+import com.dev.habitwallpaper.core.designsystem.toAndroid
 
 object WallpaperConfig {
-    // Colors
-    val BACKGROUND_GRADIENT_START = Color.parseColor("#F8F9FA")
-    val BACKGROUND_GRADIENT_END = Color.parseColor("#E9ECEF")
-    val TEXT_PRIMARY = Color.parseColor("#212529")
-    val TEXT_SECONDARY = Color.parseColor("#6C757D")
-    val STREAK_ORANGE = Color.parseColor("#FF9800")
-    val GRID_EMPTY = Color.parseColor("#DEE2E6")
-    val GRID_FILLED = Color.parseColor("#7CB342")
+    // Colors derived from Centralized Design System
+    val BACKGROUND_GRADIENT_START = HabitColors.MINT_SURFACE.toAndroid()
+    val BACKGROUND_GRADIENT_END = HabitColors.GRID_EMPTY.toAndroid()
+    val TEXT_PRIMARY = HabitColors.ON_SURFACE_TEXT.toAndroid()
+    val TEXT_SECONDARY = HabitColors.SECONDARY_TEXT.toAndroid()
+    val STREAK_ORANGE = HabitColors.STREAK_ORANGE.toAndroid()
+    val GRID_EMPTY = HabitColors.GRID_EMPTY.toAndroid()
+    val GRID_FILLED = HabitColors.GRID_HIGH.toAndroid()
 
-    // Typography
-    const val TITLE_TEXT_SIZE_SP = 28f
-    const val SUBTITLE_TEXT_SIZE_SP = 16f
+    // Typography derived from Centralized Design System
+    const val TITLE_TEXT_SIZE_SP = HabitTypography.TITLE_SIZE_SP
+    const val SUBTITLE_TEXT_SIZE_SP = HabitTypography.SUBTITLE_SIZE_SP
     
     // Layout
     const val GRID_COLUMNS = 7

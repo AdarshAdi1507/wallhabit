@@ -1,11 +1,30 @@
 package com.dev.habitwallpaper.ui.theme
 
-import androidx.compose.ui.graphics.Color
+import com.dev.habitwallpaper.core.designsystem.HabitColors
+import com.dev.habitwallpaper.core.designsystem.toCompose
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Brand Colors
+val ForestDeep = HabitColors.FOREST_DEEP.toCompose()
+val EmeraldSoft = HabitColors.EMERALD_SOFT.toCompose()
+val MintSurface = HabitColors.MINT_SURFACE.toCompose()
+val DarkGrayText = HabitColors.ON_SURFACE_TEXT.toCompose()
+val MutedSageText = HabitColors.SECONDARY_TEXT.toCompose()
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Dark Mode Colors
+val DarkGreenBlack = HabitColors.DARK_GREEN_BLACK.toCompose()
+val GlowEmerald = HabitColors.GLOW_EMERALD.toCompose()
+
+// Heatmap Colors
+val GridEmpty = HabitColors.GRID_EMPTY.toCompose()
+val GridLow = HabitColors.GRID_LOW.toCompose()
+val GridMedium = HabitColors.GRID_MEDIUM.toCompose()
+val GridHigh = HabitColors.GRID_HIGH.toCompose()
+
+// Legacy mappings for Material Theme backward compatibility
+val Purple80 = GlowEmerald
+val PurpleGrey80 = EmeraldSoft
+val Pink80 = GridLow
+
+val Purple40 = ForestDeep
+val PurpleGrey40 = EmeraldSoft
+val Pink40 = DarkGrayText

@@ -5,6 +5,7 @@ import com.dev.habitwallpaper.data.local.entity.CompletionEntity
 import com.dev.habitwallpaper.data.local.entity.HabitEntity
 import com.dev.habitwallpaper.data.local.relation.HabitWithCompletions
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.domain.model.HabitCompletion
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -86,7 +87,10 @@ class HabitRepositoryImpl(
     )
 
     private fun HabitWithCompletions.toDomain(): Habit {
-        val completions = this.completions.map { LocalDate.ofEpochDay(it.date) }
+        val completions = this.completions.map { 
+            HabitCompletion(LocalDate.ofEpochDay(it.date), it.value) 
+        }
+        val completedDates = completions.map { it.date }
         val today = LocalDate.now()
         val reminderLocalTime = this.habit.reminderTime?.let {
             LocalTime.of((it / 60).toInt(), (it % 60).toInt())
@@ -106,9 +110,9 @@ class HabitRepositoryImpl(
             reminderTime = reminderLocalTime,
             reminderDays = daysList,
             createdAt = this.habit.createdAt,
-            isCompletedToday = completions.contains(today),
-            currentStreak = calculateStreak(completions),
-            completedDates = completions,
+            isCompletedToday = completedDates.contains(today),
+            currentStreak = calculateStreak(completedDates),
+            completions = completions,
             isWallpaperSelected = this.habit.isWallpaperSelected,
             trackingType = this.habit.trackingType,
             goalValue = this.habit.goalValue,

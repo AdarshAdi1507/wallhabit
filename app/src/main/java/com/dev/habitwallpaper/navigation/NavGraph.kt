@@ -95,12 +95,17 @@ class HabitViewModelFactory(
                 @Suppress("UNCHECKED_CAST")
                 HabitViewModel(
                     CreateHabitUseCase(repository),
-                    AlarmScheduler(context)
+                    AlarmScheduler(context),
+                    context
                 ) as T
             }
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
-                HomeViewModel(GetHabitsUseCase(repository), repository) as T
+                HomeViewModel(
+                    GetHabitsUseCase(repository),
+                    repository,
+                    context
+                ) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }

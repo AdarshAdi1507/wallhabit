@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -21,11 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
 import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
 import java.time.LocalDate
@@ -38,6 +41,7 @@ fun HomeScreen(
     onHabitClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var habitForNumericInput by remember { mutableStateOf<Habit?>(null) }
 
     Scaffold(
         topBar = {
@@ -77,11 +81,68 @@ fun HomeScreen(
             HomeContent(
                 uiState = uiState,
                 innerPadding = innerPadding,
-                onToggle = { viewModel.toggleHabitCompletion(it) },
+                onToggle = { habit ->
+                    if (habit.trackingType == TrackingType.NUMERIC && !habit.isCompletedToday) {
+                        habitForNumericInput = habit
+                    } else {
+                        viewModel.toggleHabitCompletion(habit)
+                    }
+                },
                 onHabitClick = onHabitClick
             )
         }
     }
+
+    if (habitForNumericInput != null) {
+        NumericCompletionDialog(
+            habit = habitForNumericInput!!,
+            onDismiss = { habitForNumericInput = null },
+            onConfirm = { value ->
+                viewModel.toggleHabitCompletion(habitForNumericInput!!, value)
+                habitForNumericInput = null
+            }
+        )
+    }
+}
+
+@Composable
+fun NumericCompletionDialog(
+    habit: Habit,
+    onDismiss: () -> Unit,
+    onConfirm: (Float) -> Unit
+) {
+    var value by remember { mutableStateOf("") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log Progress") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Enter the value for \"${habit.name}\"")
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { if (it.isEmpty() || it.toFloatOrNull() != null) value = it },
+                    placeholder = { Text("Target: ${habit.goalValue}") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(value.toFloatOrNull() ?: 1f) },
+                enabled = value.isNotEmpty()
+            ) {
+                Text("Complete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -284,19 +345,38 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        habit.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "${habit.currentStreak} day streak",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = HabitColors.STREAK_ORANGE.toCompose(),
-                        fontWeight = FontWeight.SemiBold
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                color = habit.color?.let { Color(it).copy(alpha = 0.2f) } ?: MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = habit.category.icon,
+                            contentDescription = null,
+                            tint = habit.color?.let { Color(it) } ?: MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            habit.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "${habit.currentStreak} day streak",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = HabitColors.STREAK_ORANGE.toCompose(),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
                 
                 IconButton(
@@ -338,7 +418,7 @@ fun HabitHeatMapV2(habit: Habit) {
                     .weight(1f)
                     .aspectRatio(1f)
                     .background(
-                        color = if (isCompleted) HabitColors.GRID_HIGH.toCompose() else HabitColors.GRID_EMPTY.toCompose(),
+                        color = if (isCompleted) (habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()) else HabitColors.GRID_EMPTY.toCompose(),
                         shape = RoundedCornerShape(4.dp)
                     )
             )

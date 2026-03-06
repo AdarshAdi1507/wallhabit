@@ -23,9 +23,9 @@ class GenerateWallpaperStateUseCase {
         val today = LocalDate.now()
         val firstDayOfWeek = habit.startDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
         val paddingDays = firstDayOfWeek - 1
-        
+
         val grid = mutableListOf<GridCellState>()
-        
+
         // Add padding for the first week to align with Monday
         repeat(paddingDays) {
             grid.add(GridCellState(isPadding = true))

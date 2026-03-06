@@ -37,13 +37,13 @@ class HabitRepositoryImpl(
         habitDao.updateWallpaperSelection(id)
     }
 
-    override suspend fun toggleCompletion(habitId: Long, date: LocalDate) {
+    override suspend fun toggleCompletion(habitId: Long, date: LocalDate, value: Float) {
         val epochDay = date.toEpochDay()
         val existing = habitDao.getCompletionForDate(habitId, epochDay)
         if (existing != null) {
             habitDao.deleteCompletion(existing)
         } else {
-            habitDao.insertCompletion(CompletionEntity(habitId = habitId, date = epochDay))
+            habitDao.insertCompletion(CompletionEntity(habitId = habitId, date = epochDay, value = value))
         }
     }
 
@@ -71,12 +71,18 @@ class HabitRepositoryImpl(
     private fun Habit.toEntity(): HabitEntity = HabitEntity(
         id = id,
         name = name,
+        description = description,
+        category = category,
         durationDays = durationDays,
         startDate = startDate.toEpochDay(),
         reminderTime = reminderTime?.let { (it.hour * 60 + it.minute).toLong() },
         reminderDays = reminderDays.joinToString(",") { it.value.toString() }.ifEmpty { null },
         createdAt = createdAt,
-        isWallpaperSelected = isWallpaperSelected
+        isWallpaperSelected = isWallpaperSelected,
+        trackingType = trackingType,
+        goalValue = goalValue,
+        color = color,
+        icon = icon
     )
 
     private fun HabitWithCompletions.toDomain(): Habit {
@@ -89,10 +95,12 @@ class HabitRepositoryImpl(
         val daysList = this.habit.reminderDays?.split(",")?.map { 
             DayOfWeek.of(it.toInt()) 
         } ?: emptyList()
-        
+
         return Habit(
             id = this.habit.id,
             name = this.habit.name,
+            description = this.habit.description,
+            category = this.habit.category,
             durationDays = this.habit.durationDays,
             startDate = LocalDate.ofEpochDay(this.habit.startDate),
             reminderTime = reminderLocalTime,
@@ -101,7 +109,11 @@ class HabitRepositoryImpl(
             isCompletedToday = completions.contains(today),
             currentStreak = calculateStreak(completions),
             completedDates = completions,
-            isWallpaperSelected = this.habit.isWallpaperSelected
+            isWallpaperSelected = this.habit.isWallpaperSelected,
+            trackingType = this.habit.trackingType,
+            goalValue = this.habit.goalValue,
+            color = this.habit.color,
+            icon = this.habit.icon
         )
     }
 }

@@ -1,5 +1,7 @@
 package com.dev.habitwallpaper.features.habit.presentation.viewmodel
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.habitwallpaper.domain.model.Habit
@@ -24,7 +26,8 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val getHabitsUseCase: GetHabitsUseCase,
-    private val repository: HabitRepository
+    private val repository: HabitRepository,
+    private val context: Context
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = getHabitsUseCase()
@@ -64,9 +67,19 @@ class HomeViewModel(
             initialValue = HomeUiState()
         )
 
-    fun toggleHabitCompletion(habit: Habit) {
+    fun toggleHabitCompletion(habit: Habit, value: Float = 1f) {
         viewModelScope.launch {
-            repository.toggleCompletion(habit.id, LocalDate.now())
+            repository.toggleCompletion(habit.id, LocalDate.now(), value)
+            
+            // If this is the wallpaper habit, trigger an update
+            if (habit.isWallpaperSelected) {
+                triggerWallpaperUpdate()
+            }
         }
+    }
+
+    private fun triggerWallpaperUpdate() {
+        val intent = Intent("com.dev.habitwallpaper.UPDATE_WALLPAPER")
+        context.sendBroadcast(intent)
     }
 }

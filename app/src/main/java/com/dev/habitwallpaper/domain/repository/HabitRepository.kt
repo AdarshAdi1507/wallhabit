@@ -10,5 +10,5 @@ interface HabitRepository {
     fun getHabitById(id: Long): Flow<Habit?>
     fun getWallpaperHabit(): Flow<Habit?>
     suspend fun setAsWallpaperHabit(id: Long)
-    suspend fun toggleCompletion(habitId: Long, date: LocalDate)
+    suspend fun toggleCompletion(habitId: Long, date: LocalDate, value: Float = 1f)
 }

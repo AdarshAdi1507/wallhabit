@@ -21,5 +21,6 @@ data class CompletionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val habitId: Long,
-    val date: Long // epoch millis
+    val date: Long, // epoch day
+    val value: Float = 1f // For numeric tracking
 )

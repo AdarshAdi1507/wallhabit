@@ -23,7 +23,3 @@ data class Habit(
     val color: Int? = null,
     val icon: String? = null
 )
-
-enum class TrackingType {
-    BINARY, NUMERIC
-}

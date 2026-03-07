@@ -173,7 +173,7 @@ fun HabitDetailScreen(
         }
     }
 }
-
+//this is habit detail screen
 @Composable
 fun HabitHeader(
     habit: Habit,

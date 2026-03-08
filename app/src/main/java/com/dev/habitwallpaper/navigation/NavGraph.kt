@@ -20,6 +20,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
+import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 sealed class Screen(val route: String) {
     object HabitSetup : Screen("habit_setup")
@@ -27,6 +29,7 @@ sealed class Screen(val route: String) {
     object HabitDetail : Screen("habit_detail/{habitId}") {
         fun createRoute(habitId: Long) = "habit_detail/$habitId"
     }
+    object WallpaperSelection : Screen("wallpaper_selection")
 }
 
 @Composable
@@ -50,6 +53,9 @@ fun NavGraph(
                 },
                 onHabitClick = { habitId ->
                     navController.navigate(Screen.HabitDetail.createRoute(habitId))
+                },
+                onWallpaperClick = {
+                    navController.navigate(Screen.WallpaperSelection.route)
                 }
             )
         }
@@ -76,6 +82,17 @@ fun NavGraph(
                 factory = HabitDetailViewModelFactory(habitId, repository)
             )
             HabitDetailScreen(
+                viewModel = viewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(Screen.WallpaperSelection.route) {
+            val viewModel: WallpaperSelectionViewModel = viewModel(
+                factory = WallpaperSelectionViewModelFactory(repository)
+            )
+            WallpaperSelectionScreen(
                 viewModel = viewModel,
                 onBack = {
                     navController.popBackStack()
@@ -124,6 +141,21 @@ class HabitDetailViewModelFactory(
                 GetHabitUseCase(repository), 
                 SetWallpaperHabitUseCase(repository),
                 repository
+            ) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+class WallpaperSelectionViewModelFactory(
+    private val repository: HabitRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(WallpaperSelectionViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return WallpaperSelectionViewModel(
+                GetHabitsUseCase(repository),
+                SetWallpaperHabitUseCase(repository)
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

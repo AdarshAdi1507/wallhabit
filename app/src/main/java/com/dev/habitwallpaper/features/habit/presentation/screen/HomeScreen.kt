@@ -216,12 +216,13 @@ fun HomeContent(
 
 @Composable
 fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
+    val isCompleted = habit.isCompletedToday
     val backgroundColor by animateColorAsState(
-        targetValue = if (habit.isCompletedToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        targetValue = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         animationSpec = tween(durationMillis = 500),
         label = "FocusCardBackground"
     )
-    val contentColor = if (habit.isCompletedToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val contentColor = if (isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -229,60 +230,120 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            // 1. Section Label
             Text(
                 "TODAY'S FOCUS",
                 style = MaterialTheme.typography.labelLarge,
-                color = if (habit.isCompletedToday) contentColor.copy(alpha = 0.8f) else MaterialTheme.colorScheme.primary,
+                color = if (isCompleted) contentColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                habit.name,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = contentColor
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                Icon(
-                    Icons.Default.Whatshot,
-                    contentDescription = null,
-                    tint = if (habit.isCompletedToday) contentColor else Color(0xFFFF9800),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    "${habit.currentStreak} Day Streak",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (habit.isCompletedToday) contentColor else Color(0xFFFF9800),
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            
             Spacer(modifier = Modifier.height(16.dp))
-
-            if (!habit.isCompletedToday) {
+            
+            // 2. Habit Identity Row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            color = if (isCompleted) contentColor.copy(alpha = 0.2f) else habit.color?.let { Color(it).copy(alpha = 0.2f) } ?: MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = habit.category.icon,
+                        contentDescription = null,
+                        tint = if (isCompleted) contentColor else habit.color?.let { Color(it) } ?: MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column {
+                    Text(
+                        habit.name,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = contentColor
+                    )
+                    
+                    // 3. Streak and Progress Information
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Whatshot,
+                            contentDescription = null,
+                            tint = if (isCompleted) contentColor.copy(alpha = 0.8f) else Color(0xFFFF9800),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${habit.currentStreak} day streak • Day ${habit.currentDay} of ${habit.durationDays}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isCompleted) contentColor.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // 4. Recent Activity Preview (Last 7 Days)
+            ConsistencyIndicatorRow(
+                habit = habit,
+                contentColor = contentColor,
+                completedColor = if (isCompleted) contentColor else null,
+                missedColor = if (isCompleted) contentColor.copy(alpha = 0.2f) else null
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // 5. Completion Status
+            if (isCompleted) {
+                Surface(
+                    color = contentColor.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Completed today",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = contentColor
+                        )
+                    }
+                }
+            } else {
                 Button(
                     onClick = onToggle,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(60.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isCompleted) contentColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary,
+                        contentColor = if (isCompleted) contentColor else MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
-                    Text("Complete Now", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = contentColor)
+                    Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Crushed it!", fontWeight = FontWeight.Bold, color = contentColor)
+                    Text("Complete Today", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             }
         }
@@ -409,9 +470,6 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
 
 @Composable
 fun HabitConsistencyPreview(habit: Habit) {
-    val today = LocalDate.now()
-    val last7Days = (0..6).reversed().map { today.minusDays(it.toLong()) }
-    
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Last 7 days",
@@ -420,30 +478,43 @@ fun HabitConsistencyPreview(habit: Habit) {
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            last7Days.forEach { date ->
-                val isBeforeStart = date.isBefore(habit.startDate)
-                val isCompleted = habit.completedDates.contains(date)
-                
-                val boxColor = when {
-                    isBeforeStart -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                    isCompleted -> habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()
-                    else -> HabitColors.GRID_EMPTY.toCompose()
-                }
-                
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .background(
-                            color = boxColor,
-                            shape = RoundedCornerShape(6.dp)
-                        )
-                )
+        ConsistencyIndicatorRow(habit)
+    }
+}
+
+@Composable
+fun ConsistencyIndicatorRow(
+    habit: Habit,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    completedColor: Color? = null,
+    missedColor: Color? = null
+) {
+    val today = LocalDate.now()
+    val last7Days = (0..6).reversed().map { today.minusDays(it.toLong()) }
+    
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        last7Days.forEach { date ->
+            val isBeforeStart = date.isBefore(habit.startDate)
+            val isCompleted = habit.completedDates.contains(date)
+            
+            val boxColor = when {
+                isBeforeStart -> contentColor.copy(alpha = 0.05f)
+                isCompleted -> completedColor ?: habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()
+                else -> missedColor ?: HabitColors.GRID_EMPTY.toCompose()
             }
+            
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f)
+                    .background(
+                        color = boxColor,
+                        shape = RoundedCornerShape(6.dp)
+                    )
+            )
         }
     }
 }

@@ -85,7 +85,7 @@ fun HabitDetailScreen(
                         item { 
                             HabitHeader(
                                 habit = habit,
-                                onToggleFavorite = { viewModel.setAsWallpaper() },
+                                onTogglePriority = { viewModel.setAsWallpaper() },
                                 onEdit = { /* TODO: Navigate to Edit */ }
                             ) 
                         }
@@ -137,7 +137,8 @@ fun HabitDetailScreen(
                                     },
                                     modifier = Modifier.weight(1f).height(56.dp),
                                     shape = RoundedCornerShape(18.dp),
-                                    border = BorderStroke(1.5.dp, HabitColors.FOREST_DEEP.toCompose().copy(alpha = 0.3f))
+                                    enabled = habit.isWallpaperSelected,
+                                    border = BorderStroke(1.5.dp, HabitColors.FOREST_DEEP.toCompose().copy(alpha = if (habit.isWallpaperSelected) 0.3f else 0.1f))
                                 ) {
                                     Icon(Icons.Default.Wallpaper, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -173,11 +174,11 @@ fun HabitDetailScreen(
         }
     }
 }
-//this is habit detail screen
+
 @Composable
 fun HabitHeader(
     habit: Habit,
-    onToggleFavorite: () -> Unit,
+    onTogglePriority: () -> Unit,
     onEdit: () -> Unit
 ) {
     Column(
@@ -202,10 +203,10 @@ fun HabitHeader(
                 modifier = Modifier.align(Alignment.TopEnd),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onToggleFavorite) {
+                IconButton(onClick = onTogglePriority) {
                     Icon(
                         imageVector = if (habit.isWallpaperSelected) Icons.Default.Star else Icons.Default.StarOutline,
-                        contentDescription = "Favorite",
+                        contentDescription = "Set Priority",
                         tint = if (habit.isWallpaperSelected) Color(0xFFFFD700) else Color.Gray
                     )
                 }

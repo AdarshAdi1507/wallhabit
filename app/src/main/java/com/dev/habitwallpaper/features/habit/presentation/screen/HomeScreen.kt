@@ -38,7 +38,8 @@ import java.time.LocalDate
 fun HomeScreen(
     viewModel: HomeViewModel,
     onAddHabit: () -> Unit,
-    onHabitClick: (Long) -> Unit
+    onHabitClick: (Long) -> Unit,
+    onWallpaperClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var habitForNumericInput by remember { mutableStateOf<Habit?>(null) }
@@ -88,7 +89,8 @@ fun HomeScreen(
                         viewModel.toggleHabitCompletion(habit)
                     }
                 },
-                onHabitClick = onHabitClick
+                onHabitClick = onHabitClick,
+                onWallpaperClick = onWallpaperClick
             )
         }
     }
@@ -150,7 +152,8 @@ fun HomeContent(
     uiState: HomeUiState,
     innerPadding: PaddingValues,
     onToggle: (Habit) -> Unit,
-    onHabitClick: (Long) -> Unit
+    onHabitClick: (Long) -> Unit,
+    onWallpaperClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -195,7 +198,7 @@ fun HomeContent(
 
         // 4. Wallpaper Preview Section
         item {
-            WallpaperPreviewSection(uiState.wallpaperHabit)
+            WallpaperPreviewSection(uiState.wallpaperHabit, onWallpaperClick)
         }
 
         // 5. Consistency Insights
@@ -427,9 +430,11 @@ fun HabitHeatMapV2(habit: Habit) {
 }
 
 @Composable
-fun WallpaperPreviewSection(wallpaperHabit: Habit?) {
+fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
     ) {

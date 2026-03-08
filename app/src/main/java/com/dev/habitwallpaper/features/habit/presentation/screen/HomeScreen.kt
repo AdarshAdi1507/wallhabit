@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -444,11 +445,16 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp)),
+                    .size(60.dp, 90.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                if (wallpaperHabit != null) {
+                    MiniWallpaperPreview(wallpaperHabit)
+                } else {
+                    Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {

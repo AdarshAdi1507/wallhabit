@@ -1,0 +1,39 @@
+# Built artifacts
+**/build/
+*.apk
+*.ap_
+*.dex
+*.class
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/navEditor.xml
+
+# Gradle
+.gradle/
+build/
+captures/
+
+# Local configuration file (contains system-specific paths)
+local.properties
+
+# Log files
+*.log
+
+# Android Studio Profiler
+*.hprof
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Kotlin
+.kotlin/

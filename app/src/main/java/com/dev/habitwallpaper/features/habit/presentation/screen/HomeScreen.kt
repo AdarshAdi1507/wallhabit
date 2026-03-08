@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -38,7 +39,8 @@ import java.time.LocalDate
 fun HomeScreen(
     viewModel: HomeViewModel,
     onAddHabit: () -> Unit,
-    onHabitClick: (Long) -> Unit
+    onHabitClick: (Long) -> Unit,
+    onWallpaperClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var habitForNumericInput by remember { mutableStateOf<Habit?>(null) }
@@ -88,7 +90,8 @@ fun HomeScreen(
                         viewModel.toggleHabitCompletion(habit)
                     }
                 },
-                onHabitClick = onHabitClick
+                onHabitClick = onHabitClick,
+                onWallpaperClick = onWallpaperClick
             )
         }
     }
@@ -150,7 +153,8 @@ fun HomeContent(
     uiState: HomeUiState,
     innerPadding: PaddingValues,
     onToggle: (Habit) -> Unit,
-    onHabitClick: (Long) -> Unit
+    onHabitClick: (Long) -> Unit,
+    onWallpaperClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -195,7 +199,7 @@ fun HomeContent(
 
         // 4. Wallpaper Preview Section
         item {
-            WallpaperPreviewSection(uiState.wallpaperHabit)
+            WallpaperPreviewSection(uiState.wallpaperHabit, onWallpaperClick)
         }
 
         // 5. Consistency Insights
@@ -427,9 +431,11 @@ fun HabitHeatMapV2(habit: Habit) {
 }
 
 @Composable
-fun WallpaperPreviewSection(wallpaperHabit: Habit?) {
+fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
     ) {
@@ -439,11 +445,16 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp)),
+                    .size(60.dp, 90.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                if (wallpaperHabit != null) {
+                    MiniWallpaperPreview(wallpaperHabit)
+                } else {
+                    Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {

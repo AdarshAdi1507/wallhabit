@@ -22,7 +22,7 @@ class GenerateWallpaperStateUseCase {
         
         val today = LocalDate.now()
         val firstDayOfWeek = habit.startDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
-        val paddingDays = firstDayOfWeek - 1
+        val paddingDays = (firstDayOfWeek - 1).coerceAtLeast(0)
 
         val grid = mutableListOf<GridCellState>()
 
@@ -32,11 +32,12 @@ class GenerateWallpaperStateUseCase {
         }
         
         // Add actual habit days
+        val completedDates = habit.completedDates
         for (i in 0 until habit.durationDays) {
             val date = habit.startDate.plusDays(i.toLong())
             grid.add(
                 GridCellState(
-                    isCompleted = habit.completedDates.contains(date),
+                    isCompleted = completedDates.contains(date),
                     isToday = date == today,
                     isFuture = date.isAfter(today)
                 )

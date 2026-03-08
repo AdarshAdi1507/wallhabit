@@ -35,10 +35,11 @@ class HomeViewModel(
             val totalCount = habits.size
             val completedCount = habits.count { it.isCompletedToday }
             
-            // Focus habit: first uncompleted habit, or first habit if all completed
-            val focusHabit = habits.firstOrNull { !it.isCompletedToday } ?: habits.firstOrNull()
-            
+            // Priority habit is the one selected as wallpaper
             val wallpaperHabit = habits.find { it.isWallpaperSelected }
+            
+            // Focus habit: use priority habit if available, otherwise follow previous logic
+            val focusHabit = wallpaperHabit ?: habits.firstOrNull { !it.isCompletedToday } ?: habits.firstOrNull()
             
             // Weekly consistency (last 7 days)
             val today = LocalDate.now()

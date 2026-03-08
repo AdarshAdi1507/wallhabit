@@ -27,7 +27,6 @@ import com.dev.habitwallpaper.core.wallpaper.WallpaperConfig
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 import java.time.LocalDate
-import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,21 +81,21 @@ fun WallpaperHabitItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(152.dp) // Fixed card height
             .clickable { onSelect() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
                             else MaterialTheme.colorScheme.surface
-        ),
-        border = if (isSelected) Row(modifier = Modifier.padding(0.dp)) { }.let { null } else null // Simplified
+        )
     ) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxWidth(),
+                .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Miniature Wallpaper Preview
+            // Miniature Wallpaper Preview - Fixed Container
             Box(
                 modifier = Modifier
                     .size(80.dp, 120.dp)
@@ -113,7 +112,8 @@ fun WallpaperHabitItem(
                 Text(
                     text = habit.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
                 Text(
                     text = "${habit.currentStreak} day streak",
@@ -162,26 +162,28 @@ fun WallpaperHabitItem(
 
 @Composable
 fun MiniWallpaperPreview(habit: Habit) {
-    val today = LocalDate.now()
     val firstDayOfWeek = habit.startDate.dayOfWeek.value
     val paddingDays = (firstDayOfWeek - 1).coerceAtLeast(0)
     val completedDates = habit.completedDates
     
-    val columns = 10 // Fewer columns for mini preview
+    val columns = 10
     val rows = 15
     
     Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
-        val spacing = 2.dp.toPx()
+        val spacing = 1.5.dp.toPx()
         val cellSize = (size.width - (columns - 1) * spacing) / columns
         
         for (i in 0 until (columns * rows)) {
             val actualIndex = i - paddingDays
+            
+            // Scaled/Clipped logic: Only draw if it fits within the rows
+            if (i / columns >= rows) break
+
             val color = when {
                 i < paddingDays -> Color.Transparent
                 actualIndex < habit.durationDays -> {
                     val date = habit.startDate.plusDays(actualIndex.toLong())
                     if (completedDates.contains(date)) {
-                        // Use a simplified version of WallpaperConfig.getThemeColor logic
                         val row = i / columns
                         val col = i % columns
                         val colorIdx = (row + col) % WallpaperConfig.RAINBOW_COLORS.size

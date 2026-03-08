@@ -81,7 +81,7 @@ fun WallpaperHabitItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(152.dp) // Fixed card height
+            .height(152.dp)
             .clickable { onSelect() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -161,7 +161,7 @@ fun WallpaperHabitItem(
 }
 
 @Composable
-fun MiniWallpaperPreview(habit: Habit) {
+fun MiniWallpaperPreview(habit: Habit, modifier: Modifier = Modifier) {
     val firstDayOfWeek = habit.startDate.dayOfWeek.value
     val paddingDays = (firstDayOfWeek - 1).coerceAtLeast(0)
     val completedDates = habit.completedDates
@@ -169,14 +169,13 @@ fun MiniWallpaperPreview(habit: Habit) {
     val columns = 10
     val rows = 15
     
-    Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
+    Canvas(modifier = modifier.fillMaxSize().padding(4.dp)) {
         val spacing = 1.5.dp.toPx()
         val cellSize = (size.width - (columns - 1) * spacing) / columns
         
         for (i in 0 until (columns * rows)) {
             val actualIndex = i - paddingDays
             
-            // Scaled/Clipped logic: Only draw if it fits within the rows
             if (i / columns >= rows) break
 
             val color = when {

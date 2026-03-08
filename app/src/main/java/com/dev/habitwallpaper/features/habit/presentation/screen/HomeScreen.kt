@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -206,7 +207,7 @@ fun HomeContent(
         item {
             ConsistencyInsights(uiState)
         }
-        
+
         item {
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -265,7 +266,7 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             if (!habit.isCompletedToday) {
                 Button(
                     onClick = onToggle,
@@ -309,10 +310,10 @@ fun DailyProgressSection(completed: Int, total: Int) {
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
-        
+
         val progress = if (total > 0) completed.toFloat() / total else 0f
         val animatedProgress by animateFloatAsState(targetValue = progress, label = "Progress")
-        
+
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
             Canvas(modifier = Modifier.size(64.dp)) {
                 drawCircle(color = Color(0xFFE0E0E0), style = Stroke(width = 8.dp.toPx()))
@@ -401,31 +402,48 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            HabitHeatMapV2(habit)
+            HabitConsistencyPreview(habit)
         }
     }
 }
 
 @Composable
-fun HabitHeatMapV2(habit: Habit) {
+fun HabitConsistencyPreview(habit: Habit) {
     val today = LocalDate.now()
-    val last14Days = (0..13).reversed().map { today.minusDays(it.toLong()) }
+    val last7Days = (0..6).reversed().map { today.minusDays(it.toLong()) }
     
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        last14Days.forEach { date ->
-            val isCompleted = habit.completedDates.contains(date)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(1f)
-                    .background(
-                        color = if (isCompleted) (habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()) else HabitColors.GRID_EMPTY.toCompose(),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-            )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Last 7 days",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            last7Days.forEach { date ->
+                val isBeforeStart = date.isBefore(habit.startDate)
+                val isCompleted = habit.completedDates.contains(date)
+                
+                val boxColor = when {
+                    isBeforeStart -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                    isCompleted -> habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()
+                    else -> HabitColors.GRID_EMPTY.toCompose()
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .background(
+                            color = boxColor,
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                )
+            }
         }
     }
 }
@@ -437,40 +455,67 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Left: Fixed-size Square Preview
             Box(
                 modifier = Modifier
-                    .size(60.dp, 90.dp)
+                    .size(64.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.secondary),
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (wallpaperHabit != null) {
-                    MiniWallpaperPreview(wallpaperHabit)
+                    MiniWallpaperPreview(
+                        habit = wallpaperHabit,
+                        modifier = Modifier.padding(4.dp)
+                    )
                 } else {
-                    Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                    Icon(
+                        Icons.Default.Wallpaper,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
                 }
             }
+            
             Spacer(modifier = Modifier.width(16.dp))
-            Column {
+            
+            // Center: Vertical Text Stack
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Current Wallpaper Habit",
-                    style = MaterialTheme.typography.titleSmall,
+                    "Wallpaper Habit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    wallpaperHabit?.name ?: "No habit selected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    text = wallpaperHabit?.name ?: "No habit selected",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                if (wallpaperHabit != null) {
+                    Text(
+                        text = "Day ${wallpaperHabit.currentDay} of ${wallpaperHabit.durationDays}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+            
+            // Right: Navigation Indicator
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = Color.Gray.copy(alpha = 0.5f),
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

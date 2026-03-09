@@ -31,7 +31,6 @@ import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 import java.time.LocalDate
 import kotlin.math.ceil
-import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,44 +167,22 @@ fun WallpaperHabitItem(
 @Composable
 fun MiniWallpaperPreview(habit: Habit, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.padding(8.dp)) {
-        val n = habit.durationDays
-        if (n <= 0) return@Canvas
+        val totalDays = habit.durationDays
+        if (totalDays <= 0) return@Canvas
 
-        val availableWidth = size.width
-        val availableHeight = size.height
+        val columns = 7
+        val rows = ceil(totalDays.toFloat() / columns).toInt()
         
-        var bestCols = 1
-        var bestRows = n
-        var maxCellSize = 0f
-        val spacingFactor = 0.15f
-
-        // Optimize layout for square cells
-        for (cols in 1..n) {
-            val rows = ceil(n.toFloat() / cols).toInt()
-            val cw = availableWidth / (cols + (cols - 1) * spacingFactor)
-            val ch = availableHeight / (rows + (rows - 1) * spacingFactor)
-            val currentCellSize = minOf(cw, ch)
-            
-            if (currentCellSize > maxCellSize) {
-                maxCellSize = currentCellSize
-                bestCols = cols
-                bestRows = rows
-            }
-        }
-
-        val cellSize = maxCellSize
-        val spacing = cellSize * spacingFactor
+        val spacing = 2.dp.toPx()
+        val cellSize = (size.width - (columns - 1) * spacing) / columns
         val cornerRadius = cellSize * 0.25f
         
-        val totalGridWidth = (bestCols * cellSize) + ((bestCols - 1) * spacing)
-        val totalGridHeight = (bestRows * cellSize) + ((bestRows - 1) * spacing)
-        
-        val startX = (availableWidth - totalGridWidth) / 2
-        val startY = (availableHeight - totalGridHeight) / 2
+        val totalGridHeight = (rows * cellSize) + ((rows - 1) * spacing)
+        val startY = (size.height - totalGridHeight) / 2
 
-        for (i in 0 until n) {
-            val row = i / bestCols
-            val col = i % bestCols
+        for (i in 0 until totalDays) {
+            val row = i / columns
+            val col = i % columns
             
             val isCompleted = i < habit.totalCompleted
             
@@ -218,7 +195,7 @@ fun MiniWallpaperPreview(habit: Habit, modifier: Modifier = Modifier) {
             drawRoundRect(
                 color = color,
                 topLeft = Offset(
-                    startX + col * (cellSize + spacing),
+                    col * (cellSize + spacing),
                     startY + row * (cellSize + spacing)
                 ),
                 size = Size(cellSize, cellSize),

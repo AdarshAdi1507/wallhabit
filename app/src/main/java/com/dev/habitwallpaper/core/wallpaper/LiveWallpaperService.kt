@@ -5,6 +5,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Shader
+import android.graphics.Typeface
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
 import com.dev.habitwallpaper.HabitApplication
@@ -18,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlin.math.ceil
 import kotlin.math.min
 
 class LiveWallpaperService : WallpaperService() {
@@ -29,17 +31,39 @@ class LiveWallpaperService : WallpaperService() {
         private var wallpaperState: WallpaperState? = null
 
         private val backgroundPaint = Paint()
-        private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        
+        private val appLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textAlign = Paint.Align.CENTER
-            color = WallpaperConfig.TEXT_PRIMARY
-            isFakeBoldText = true
+            color = WallpaperConfig.APP_LABEL_COLOR
+            textSize = spToPx(WallpaperConfig.APP_LABEL_SIZE_SP)
+            letterSpacing = WallpaperConfig.APP_LABEL_LETTER_SPACING
+            typeface = Typeface.create("sans-serif", Typeface.NORMAL)
         }
-        private val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+
+        private val habitNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textAlign = Paint.Align.CENTER
-            color = WallpaperConfig.TEXT_SECONDARY
+            color = WallpaperConfig.HABIT_NAME_COLOR
+            textSize = spToPx(WallpaperConfig.HABIT_NAME_SIZE_SP)
+            letterSpacing = WallpaperConfig.HABIT_NAME_LETTER_SPACING
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
         }
-        private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+
+        private val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textAlign = Paint.Align.CENTER
+            color = WallpaperConfig.STREAK_TEXT_COLOR
+            textSize = spToPx(WallpaperConfig.STREAK_TEXT_SIZE_SP)
+            letterSpacing = WallpaperConfig.STREAK_TEXT_LETTER_SPACING
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        }
+
+        private val gridFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
+        }
+
+        private val gridStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = WallpaperConfig.GRID_INCOMPLETE_BORDER
+            strokeWidth = dpToPx(1f)
         }
 
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
@@ -93,7 +117,7 @@ class LiveWallpaperService : WallpaperService() {
             val width = canvas.width.toFloat()
             val height = canvas.height.toFloat()
 
-            // 1. Draw Background
+            // 1. Draw Background Gradient
             backgroundPaint.shader = LinearGradient(
                 0f, 0f, 0f, height,
                 WallpaperConfig.BACKGROUND_GRADIENT_START,
@@ -104,82 +128,87 @@ class LiveWallpaperService : WallpaperService() {
 
             val state = wallpaperState ?: return
 
-            // 2. Draw Header Text (Positioned at Top)
             val centerX = width / 2
-            val titleY = height * 0.15f
-            
-            titlePaint.textSize = spToPx(WallpaperConfig.TITLE_TEXT_SIZE_SP)
-            canvas.drawText(state.habitName.uppercase(), centerX, titleY, titlePaint)
 
-            subtitlePaint.textSize = spToPx(WallpaperConfig.SUBTITLE_TEXT_SIZE_SP)
-            canvas.drawText("${state.streakCount} DAY STREAK", centerX, titleY + 60f, subtitlePaint)
+            // 2. Draw App Label (Top Center)
+            val appLabelY = height * 0.08f
+            canvas.drawText("WALLHABIT", centerX, appLabelY, appLabelPaint)
 
-            // 3. Draw Artwork Grid
-            renderArtworkGrid(canvas, state.completionGrid)
+            // 3. Draw Habit Name
+            val habitNameY = appLabelY + spToPx(56f)
+            canvas.drawText(state.habitName, centerX, habitNameY, habitNamePaint)
+
+            // 4. Draw Streak Info (Uppercase)
+            val streakY = habitNameY + spToPx(24f)
+            val streakText = "${state.streakCount} DAY STREAK"
+            canvas.drawText(streakText.uppercase(), centerX, streakY, streakPaint)
+
+            // 5. Draw Dynamic Progress Grid
+            val gridTopLimit = streakY + dpToPx(48f)
+            val bottomLimit = height * 0.12f // Action button area safety
+            renderDynamicGrid(canvas, state, gridTopLimit, bottomLimit)
         }
 
-        private fun renderArtworkGrid(canvas: Canvas, grid: List<GridCellState>) {
+        private fun renderDynamicGrid(canvas: Canvas, state: WallpaperState, topLimit: Float, bottomLimit: Float) {
+            val grid = state.completionGrid.filter { !it.isPadding }
             if (grid.isEmpty()) return
 
             val screenWidth = canvas.width.toFloat()
             val screenHeight = canvas.height.toFloat()
             
-            // Define drawing area margins
-            val leftMargin = screenWidth * WallpaperConfig.GRID_SIDE_MARGIN_PERCENT
-            val rightMargin = screenWidth * WallpaperConfig.GRID_SIDE_MARGIN_PERCENT
-            val topMargin = screenHeight * WallpaperConfig.GRID_TOP_MARGIN_PERCENT
-            val bottomMargin = screenHeight * WallpaperConfig.GRID_BOTTOM_MARGIN_PERCENT
+            val horizontalPadding = screenWidth * WallpaperConfig.GRID_SIDE_MARGIN_PERCENT
+            val availableWidth = screenWidth - (horizontalPadding * 2)
+            val availableHeight = screenHeight - topLimit - bottomLimit
             
-            val availableWidth = screenWidth - leftMargin - rightMargin
-            val availableHeight = screenHeight - topMargin - bottomMargin
+            if (availableWidth <= 0 || availableHeight <= 0) return
+
+            val n = grid.size
+            var bestCols = 1
+            var bestRows = n
+            var maxCellSize = 0f
+            val spacingFactor = 0.15f // 15% spacing
+
+            // Calculate optimal grid layout (maximize square cell size)
+            for (cols in 1..n) {
+                val rows = ceil(n.toFloat() / cols).toInt()
+                val cw = availableWidth / (cols + (cols - 1) * spacingFactor)
+                val ch = availableHeight / (rows + (rows - 1) * spacingFactor)
+                val currentCellSize = min(cw, ch)
+                
+                if (currentCellSize > maxCellSize) {
+                    maxCellSize = currentCellSize
+                    bestCols = cols
+                    bestRows = rows
+                }
+            }
+
+            val cellSize = maxCellSize
+            val spacing = cellSize * spacingFactor
+            val cornerRadius = cellSize * 0.25f
             
-            val columns = WallpaperConfig.GRID_COLUMNS
-            val numRows = (grid.size + columns - 1) / columns
+            val totalGridWidth = (bestCols * cellSize) + ((bestCols - 1) * spacing)
+            val totalGridHeight = (bestRows * cellSize) + ((bestRows - 1) * spacing)
             
-            val spacing = dpToPx(WallpaperConfig.GRID_SPACING_DP)
-            
-            // Calculate largest possible square size
-            val cellWidth = (availableWidth - (columns - 1) * spacing) / columns
-            val cellHeight = (availableHeight - (numRows - 1) * spacing) / numRows
-            
-            val cellSize = min(cellWidth, cellHeight)
-            val cornerRadius = cellSize * 0.15f
-            
-            // Center the grid within the available area
-            val totalGridWidth = (columns * cellSize) + ((columns - 1) * spacing)
-            val totalGridHeight = (numRows * cellSize) + ((numRows - 1) * spacing)
-            
-            val startX = leftMargin + (availableWidth - totalGridWidth) / 2
-            val startY = topMargin + (availableHeight - totalGridHeight) / 2
+            val startX = (screenWidth - totalGridWidth) / 2
+            val startY = topLimit + (availableHeight - totalGridHeight) / 2
 
             for (i in grid.indices) {
-                val cell = grid[i]
-                if (cell.isPadding) continue
-
-                val row = i / columns
-                val col = i % columns
+                val row = i / bestCols
+                val col = i % bestCols
 
                 val left = startX + (col * (cellSize + spacing))
                 val top = startY + (row * (cellSize + spacing))
                 val rect = RectF(left, top, left + cellSize, top + cellSize)
 
-                // If completed -> Theme Color, else -> Neutral Background
-                gridPaint.color = if (cell.isCompleted) {
-                    WallpaperConfig.getThemeColor(i, columns)
+                val isFilled = i < state.totalCompleted
+
+                if (isFilled) {
+                    gridFillPaint.color = WallpaperConfig.GRID_COMPLETED
+                    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, gridFillPaint)
                 } else {
-                    WallpaperConfig.GRID_NEUTRAL
-                }
-                
-                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, gridPaint)
-                
-                // Highlight "Today"
-                if (cell.isToday) {
-                    val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        style = Paint.Style.STROKE
-                        strokeWidth = dpToPx(2f)
-                        color = WallpaperConfig.TEXT_PRIMARY
-                    }
-                    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, strokePaint)
+                    gridFillPaint.color = WallpaperConfig.GRID_INCOMPLETE_BG
+                    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, gridFillPaint)
+                    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, gridStrokePaint)
                 }
             }
         }

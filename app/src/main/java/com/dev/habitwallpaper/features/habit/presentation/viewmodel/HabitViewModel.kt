@@ -10,15 +10,14 @@ import com.dev.habitwallpaper.domain.model.HabitCategory
 import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.domain.usecase.CreateHabitUseCase
 import com.dev.habitwallpaper.features.habit.presentation.state.HabitUIState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
+@OptIn(FlowPreview::class)
 class HabitViewModel(
     private val createHabitUseCase: CreateHabitUseCase,
     private val alarmScheduler: AlarmScheduler,
@@ -30,6 +29,100 @@ class HabitViewModel(
 
     private val _customDuration = MutableStateFlow("")
     val customDuration: StateFlow<String> = _customDuration.asStateFlow()
+
+    init {
+        observeNameChanges()
+    }
+
+    private fun observeNameChanges() {
+        viewModelScope.launch {
+            _uiState
+                .map { it.habitName }
+                .distinctUntilChanged()
+                .debounce(600L)
+                .collect { name ->
+                    if (name.isNotBlank()) {
+                        detectAndSetCategory(name)
+                    }
+                }
+        }
+    }
+
+    private fun detectAndSetCategory(name: String) {
+        val lowercaseName = name.lowercase()
+        val detectedCategory = when {
+            // FITNESS: Sports, gym, outdoor activities, exercises
+            listOf(
+                "gym", "workout", "run", "fitness", "exercise", "training", "sport", "yoga", "walk", "swim", "cycling",
+                "bike", "pilates", "cardio", "strength", "lift", "weights", "crossfit", "hiit", "stretching", "plank",
+                "pushup", "situp", "squat", "marathon", "triathlon", "hike", "climb", "boxing", "martial arts", "karate",
+                "dance", "zumba", "aerobics", "football", "soccer", "basketball", "tennis", "badminton", "rowing", "surf",
+                "skate", "ski", "jog", "athlete", "track", "field", "volleyball", "golf", "rugby", "hockey", "baseball",
+                "wrestling", "mma", "taekwondo", "judo", "fencing", "archery", "bowling", "cricket", "tabata", "burpee"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.FITNESS
+            
+            // HEALTH: Physical health, diet, medical, body maintenance
+            listOf(
+                "meditation", "sleep", "water", "diet", "medicine", "health", "fruit", "doctor", "hydration", "vitamin",
+                "calorie", "keto", "vegan", "vegetarian", "nutrition", "protein", "breakfast", "lunch", "dinner", "snack",
+                "salad", "veggie", "organic", "fasting", "detox", "dentist", "checkup", "posture", "skin", "hair", "teeth",
+                "brush", "floss", "sunscreen", "nap", "rest", "recovery", "therapy", "counsel", "supplement", "mineral",
+                "sugar", "salt", "fiber", "carb", "fat", "weight", "bmi", "blood", "pressure", "heart", "lung", "brain"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.HEALTH
+            
+            // LEARNING: Academic, skills, instruments, arts
+            listOf(
+                "coding", "read", "study", "book", "course", "learn", "language", "guitar", "piano", "skill", "lesson",
+                "program", "python", "java", "kotlin", "swift", "javascript", "math", "science", "history", "philosophy",
+                "write", "poem", "novel", "library", "podcast", "documentary", "exam", "test", "quiz", "homework",
+                "flashcard", "workshop", "seminar", "tutorial", "lecture", "instrument", "violin", "drum", "sing", "art",
+                "draw", "paint", "sketch", "sculpt", "craft", "knit", "sew", "photography", "video", "edit", "language",
+                "spanish", "french", "german", "chinese", "japanese", "korean", "russian", "arabic", "sign language"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.LEARNING
+            
+            // PRODUCTIVITY: Professional, financial, organizational
+            listOf(
+                "work", "focus", "email", "task", "project", "plan", "productivity", "writing", "meeting", "deep work",
+                "pomodoro", "checklist", "todo", "calendar", "schedule", "deadline", "organize", "clean", "inbox",
+                "document", "spreadsheet", "report", "presentation", "client", "business", "career", "money", "budget",
+                "save", "invest", "stock", "finance", "tax", "banking", "invoice", "meeting", "call", "office", "resume",
+                "job", "interview", "delegate", "prioritize", "efficiency", "workflow"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.PRODUCTIVITY
+            
+            // MINDFULNESS: Mental well-being, spiritual, relaxation
+            listOf(
+                "mindful", "breath", "calm", "journal", "relax", "zen", "grateful", "gratitude", "prayer", "worship",
+                "church", "mosque", "temple", "silence", "solitude", "reflect", "intention", "manifest", "affirm",
+                "presence", "peace", "stillness", "tai chi", "qigong", "spa", "massage", "sauna", "bath", "nature",
+                "forest", "spiritual", "soul", "kindness", "compassion", "empathy", "forgive", "tarot", "manifestation"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.MINDFULNESS
+            
+            // LIFESTYLE: Home, social, hobbies, chores
+            listOf(
+                "lifestyle", "hobby", "clean", "cook", "garden", "social", "family", "friend", "pet", "dog", "cat",
+                "call", "talk", "visit", "travel", "trip", "vacation", "nature", "park", "outdoor", "shop", "grocery",
+                "meal prep", "laundry", "dish", "vacuum", "sweep", "recycle", "community", "volunteer", "charity",
+                "event", "party", "concert", "movie", "game", "hobby", "collection", "diy", "home", "decor", "fashion",
+                "style", "clothes", "makeup", "grooming", "plant", "water plants"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.LIFESTYLE
+            
+            // PERSONAL DEVELOPMENT: Routines, soft skills, character
+            listOf(
+                "development", "growth", "routine", "discipline", "goal", "habit", "morning", "evening", "night",
+                "wakeup", "early", "bedtime", "wake", "mirror", "confidence", "speech", "public speaking", "leadership",
+                "mentor", "coach", "feedback", "review", "change", "improve", "transform", "mindset", "motivation",
+                "inspiration", "productivity", "time management", "self-care", "self-love", "boundaries", "assertive"
+            ).any { lowercaseName.contains(it) } -> HabitCategory.PERSONAL_DEVELOPMENT
+            
+            else -> null
+        }
+
+        detectedCategory?.let { category ->
+            if (_uiState.value.category != category) {
+                _uiState.update { it.copy(category = category) }
+            }
+        }
+    }
 
     fun onHabitNameChange(newName: String) {
         _uiState.update { it.copy(habitName = newName, error = null) }

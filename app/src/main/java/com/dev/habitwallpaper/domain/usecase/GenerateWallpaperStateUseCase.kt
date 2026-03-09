@@ -6,6 +6,7 @@ import java.time.LocalDate
 data class WallpaperState(
     val habitName: String,
     val streakCount: Int,
+    val totalCompleted: Int,
     val completionGrid: List<GridCellState>
 )
 
@@ -47,6 +48,7 @@ class GenerateWallpaperStateUseCase {
         return WallpaperState(
             habitName = habit.name,
             streakCount = habit.currentStreak,
+            totalCompleted = habit.totalCompleted,
             completionGrid = grid
         )
     }

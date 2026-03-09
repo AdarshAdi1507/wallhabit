@@ -1,55 +1,45 @@
 package com.dev.habitwallpaper.core.wallpaper
 
 import android.graphics.Color
-import com.dev.habitwallpaper.core.designsystem.HabitColors
-import com.dev.habitwallpaper.core.designsystem.HabitTypography
-import com.dev.habitwallpaper.core.designsystem.toAndroid
 
 object WallpaperConfig {
-    // Colors derived from Centralized Design System
-    val BACKGROUND_GRADIENT_START = HabitColors.MINT_SURFACE.toAndroid()
-    val BACKGROUND_GRADIENT_END = Color.parseColor("#E0E0E0")
-    val TEXT_PRIMARY = HabitColors.ON_SURFACE_TEXT.toAndroid()
-    val TEXT_SECONDARY = HabitColors.SECONDARY_TEXT.toAndroid()
-    val STREAK_ORANGE = HabitColors.STREAK_ORANGE.toAndroid()
+    // --- Colors (Apple iOS Clean/Minimal Aesthetic) ---
+    val BACKGROUND_GRADIENT_START = Color.parseColor("#E8F1E9") // Soft pale sage green
+    val BACKGROUND_GRADIENT_END = Color.parseColor("#E1ECEB")   // Mist blue-green
     
-    val GRID_NEUTRAL = Color.parseColor("#F5F5F5")
-    val GRID_EMPTY = HabitColors.GRID_EMPTY.toAndroid()
-    val GRID_FILLED = HabitColors.GRID_HIGH.toAndroid()
+    val APP_LABEL_COLOR = Color.parseColor("#8E8E93")          // Muted sage gray (iOS-like)
+    val HABIT_NAME_COLOR = Color.parseColor("#1C1C1E")         // Dark charcoal (iOS-like)
+    val STREAK_TEXT_COLOR = Color.parseColor("#3A3A3C")        // Muted dark color
+    
+    val GRID_COMPLETED = Color.parseColor("#58D68D")           // Soft vibrant mint green
+    val GRID_INCOMPLETE_BORDER = Color.parseColor("#A3B18A")    // Subtle sage green border
+    val GRID_INCOMPLETE_BG = Color.parseColor("#1AFFFFFF")     // Very light translucent background (10% white)
 
-    // Rainbow Theme Colors for Artwork
     val RAINBOW_COLORS = listOf(
-        Color.parseColor("#FFADAD"), // Red
-        Color.parseColor("#FFD6A5"), // Orange
-        Color.parseColor("#FDFFB6"), // Yellow
-        Color.parseColor("#CAFFBF"), // Green
-        Color.parseColor("#9BF6FF"), // Blue
-        Color.parseColor("#A0C4FF"), // Indigo
-        Color.parseColor("#BDB2FF"), // Violet
-        Color.parseColor("#FFC6FF")  // Pink
+        Color.parseColor("#FFADAD"), // Pastel Red
+        Color.parseColor("#FFD6A5"), // Pastel Orange
+        Color.parseColor("#FDFFB6"), // Pastel Yellow
+        Color.parseColor("#CAFFBF"), // Pastel Green
+        Color.parseColor("#9BF6FF"), // Pastel Blue
+        Color.parseColor("#A0C4FF"), // Pastel Periwinkle
+        Color.parseColor("#BDB2FF"), // Pastel Purple
+        Color.parseColor("#FFC6FF")  // Pastel Pink
     )
 
-    // Typography
-    const val TITLE_TEXT_SIZE_SP = 32f
-    const val SUBTITLE_TEXT_SIZE_SP = 16f
+    // --- Typography (DM Sans Style) ---
+    const val APP_LABEL_SIZE_SP = 12f
+    const val HABIT_NAME_SIZE_SP = 48f
+    const val STREAK_TEXT_SIZE_SP = 14f
     
-    // Layout - The Artwork Grid
-    const val GRID_COLUMNS = 15 // Wider for the artwork look
-    const val GRID_SPACING_DP = 4f
-    
-    // Artwork Area (percent of screen)
-    const val GRID_TOP_MARGIN_PERCENT = 0.35f
-    const val GRID_BOTTOM_MARGIN_PERCENT = 0.10f
-    const val GRID_SIDE_MARGIN_PERCENT = 0.08f
+    const val APP_LABEL_LETTER_SPACING = 0.1f
+    const val HABIT_NAME_LETTER_SPACING = -0.05f // Tight premium feel (-0.5 in 1000-unit is -0.05 in Canvas letterSpacing)
+    const val STREAK_TEXT_LETTER_SPACING = 0.2f  // Wide (2.0 in 1000-unit is 0.2 in Canvas)
 
-    /**
-     * Calculates a theme color for a specific cell index to create a diagonal pattern.
-     */
-    fun getThemeColor(index: Int, columns: Int): Int {
-        val row = index / columns
-        val col = index % columns
-        // Diagonal pattern: sum of row and col determines color
-        val colorIndex = (row + col) % RAINBOW_COLORS.size
-        return RAINBOW_COLORS[colorIndex]
-    }
+    // --- Layout ---
+    const val GRID_COLUMNS = 7
+    const val GRID_ROWS = 3
+    const val GRID_SPACING_DP = 10f
+    
+    const val GRID_CENTER_Y_PERCENT = 0.65f // Lower-middle section
+    const val GRID_SIDE_MARGIN_PERCENT = 0.15f
 }

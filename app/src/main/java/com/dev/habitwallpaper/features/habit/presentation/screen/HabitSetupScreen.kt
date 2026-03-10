@@ -159,7 +159,7 @@ fun HabitSetupScreen(
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryMenu) },
                                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                                colors = OutlinedTextFieldDefaults.colors()
                             )
                             ExposedDropdownMenu(
                                 expanded = showCategoryMenu,

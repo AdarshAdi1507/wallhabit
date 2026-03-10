@@ -22,7 +22,8 @@ data class Habit(
     val trackingType: TrackingType = TrackingType.BINARY,
     val goalValue: Float = 1f,
     val color: Int? = null,
-    val icon: String? = null
+    val icon: String? = null,
+    val isPaused: Boolean = false
 ) {
     val completedDates: List<LocalDate> get() = completions.map { it.date }
 
@@ -47,6 +48,9 @@ data class Habit(
             val expectedDaysSoFar = daysSinceStart.coerceAtMost(durationDays).coerceAtLeast(0)
             return (expectedDaysSoFar - totalCompleted).coerceAtLeast(0)
         }
+
+    val isCompleted: Boolean
+        get() = totalCompleted >= durationDays
 
     val completionRate: Float
         get() {

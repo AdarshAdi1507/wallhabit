@@ -48,6 +48,18 @@ class HabitRepositoryImpl(
         }
     }
 
+    override suspend fun updateHabit(habit: Habit) {
+        habitDao.updateHabit(habit.toEntity())
+    }
+
+    override suspend fun deleteHabit(habitId: Long) {
+        habitDao.deleteHabit(habitId)
+    }
+
+    override suspend fun pauseHabit(habitId: Long, isPaused: Boolean) {
+        habitDao.updatePauseStatus(habitId, isPaused)
+    }
+
     private fun calculateStreak(completedDates: List<LocalDate>): Int {
         if (completedDates.isEmpty()) return 0
         val sortedDates = completedDates.sortedDescending()
@@ -83,7 +95,8 @@ class HabitRepositoryImpl(
         trackingType = trackingType,
         goalValue = goalValue,
         color = color,
-        icon = icon
+        icon = icon,
+        isPaused = isPaused
     )
 
     private fun HabitWithCompletions.toDomain(): Habit {
@@ -117,7 +130,8 @@ class HabitRepositoryImpl(
             trackingType = this.habit.trackingType,
             goalValue = this.habit.goalValue,
             color = this.habit.color,
-            icon = this.habit.icon
+            icon = this.habit.icon,
+            isPaused = this.habit.isPaused
         )
     }
 }

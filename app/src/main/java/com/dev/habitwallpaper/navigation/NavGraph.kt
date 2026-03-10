@@ -2,6 +2,7 @@ package com.dev.habitwallpaper.navigation
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -20,27 +21,21 @@ import androidx.lifecycle.ViewModelProvider
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
+import com.dev.habitwallpaper.features.habit.presentation.screen.InsightsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
-
-sealed class Screen(val route: String) {
-    object HabitSetup : Screen("habit_setup")
-    object Home : Screen("home")
-    object HabitDetail : Screen("habit_detail/{habitId}") {
-        fun createRoute(habitId: Long) = "habit_detail/$habitId"
-    }
-    object WallpaperSelection : Screen("wallpaper_selection")
-}
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    repository: HabitRepository
+    repository: HabitRepository,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        modifier = modifier
     ) {
         composable(Screen.Home.route) {
             val viewModel: HomeViewModel = viewModel(
@@ -55,10 +50,47 @@ fun NavGraph(
                     navController.navigate(Screen.HabitDetail.createRoute(habitId))
                 },
                 onWallpaperClick = {
-                    navController.navigate(Screen.WallpaperSelection.route)
+                    navController.navigate(Screen.Wallpaper.route)
                 }
             )
         }
+        
+        composable(Screen.Habits.route) {
+            // Placeholder for Habits list if separate from Home
+            val viewModel: HomeViewModel = viewModel(
+                factory = HabitViewModelFactory(repository, context)
+            )
+            HomeScreen(
+                viewModel = viewModel,
+                onAddHabit = { navController.navigate(Screen.HabitSetup.route) },
+                onHabitClick = { habitId -> navController.navigate(Screen.HabitDetail.createRoute(habitId)) },
+                onWallpaperClick = { navController.navigate(Screen.Wallpaper.route) }
+            )
+        }
+
+        composable(Screen.Insights.route) {
+            val viewModel: HomeViewModel = viewModel(
+                factory = HabitViewModelFactory(repository, context)
+            )
+            InsightsScreen(viewModel = viewModel)
+        }
+
+        composable(Screen.Wallpaper.route) {
+            val viewModel: WallpaperSelectionViewModel = viewModel(
+                factory = WallpaperSelectionViewModelFactory(repository)
+            )
+            WallpaperSelectionScreen(
+                viewModel = viewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.Profile.route) {
+            // Placeholder for Profile
+        }
+
         composable(Screen.HabitSetup.route) {
             val viewModel: HabitViewModel = viewModel(
                 factory = HabitViewModelFactory(repository, context)
@@ -73,6 +105,7 @@ fun NavGraph(
                 }
             )
         }
+        
         composable(
             route = Screen.HabitDetail.route,
             arguments = listOf(navArgument("habitId") { type = NavType.LongType })
@@ -82,17 +115,6 @@ fun NavGraph(
                 factory = HabitDetailViewModelFactory(habitId, repository)
             )
             HabitDetailScreen(
-                viewModel = viewModel,
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        composable(Screen.WallpaperSelection.route) {
-            val viewModel: WallpaperSelectionViewModel = viewModel(
-                factory = WallpaperSelectionViewModelFactory(repository)
-            )
-            WallpaperSelectionScreen(
                 viewModel = viewModel,
                 onBack = {
                     navController.popBackStack()

@@ -33,6 +33,7 @@ import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
+import com.dev.habitwallpaper.features.habit.presentation.component.MiniWallpaperPreview
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,7 +53,7 @@ fun HomeScreen(
                 title = {
                     Text(
                         "HabitFlow",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -110,46 +111,6 @@ fun HomeScreen(
 }
 
 @Composable
-fun NumericCompletionDialog(
-    habit: Habit,
-    onDismiss: () -> Unit,
-    onConfirm: (Float) -> Unit
-) {
-    var value by remember { mutableStateOf("") }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Log Progress") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Enter the value for \"${habit.name}\"")
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { if (it.isEmpty() || it.toFloatOrNull() != null) value = it },
-                    placeholder = { Text("Target: ${habit.goalValue}") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(value.toFloatOrNull() ?: 1f) },
-                enabled = value.isNotEmpty()
-            ) {
-                Text("Complete")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
 fun HomeContent(
     uiState: HomeUiState,
     innerPadding: PaddingValues,
@@ -203,13 +164,8 @@ fun HomeContent(
             WallpaperPreviewSection(uiState.wallpaperHabit, onWallpaperClick)
         }
 
-        // 5. Consistency Insights
         item {
-            ConsistencyInsights(uiState)
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(80.dp)) // Extra space for bottom nav
         }
     }
 }
@@ -379,7 +335,7 @@ fun DailyProgressSection(completed: Int, total: Int) {
             Canvas(modifier = Modifier.size(64.dp)) {
                 drawCircle(color = Color(0xFFE0E0E0), style = Stroke(width = 8.dp.toPx()))
                 drawArc(
-                    color = Color(0xFF56AB2F), // Keeping a vibrant green for progress
+                    color = Color(0xFF56AB2F),
                     startAngle = -90f,
                     sweepAngle = 360f * animatedProgress,
                     useCenter = false,
@@ -533,7 +489,6 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Fixed-size Square Preview
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -557,7 +512,6 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Center: Vertical Text Stack
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Wallpaper Habit",
@@ -580,7 +534,6 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
                 }
             }
             
-            // Right: Navigation Indicator
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Navigate",
@@ -592,46 +545,43 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
 }
 
 @Composable
-fun ConsistencyInsights(uiState: HomeUiState) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                "Weekly Insights",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${(uiState.weeklyConsistency * 100).toInt()}%",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "consistent this week",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+fun NumericCompletionDialog(
+    habit: Habit,
+    onDismiss: () -> Unit,
+    onConfirm: (Float) -> Unit
+) {
+    var value by remember { mutableStateOf("") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log Progress") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Enter the value for \"${habit.name}\"")
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { if (it.isEmpty() || it.toFloatOrNull() != null) value = it },
+                    placeholder = { Text("Target: ${habit.goalValue}") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            val topHabit = uiState.habits.maxByOrNull { it.currentStreak }
-            if (topHabit != null && topHabit.currentStreak > 0) {
-                Text(
-                    "🔥 Your longest streak is ${topHabit.name} – ${topHabit.currentStreak} days",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(value.toFloatOrNull() ?: 1f) },
+                enabled = value.isNotEmpty()
+            ) {
+                Text("Complete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
-    }
+    )
 }
 
 @Composable

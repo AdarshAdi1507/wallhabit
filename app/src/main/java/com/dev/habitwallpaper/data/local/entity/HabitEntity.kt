@@ -21,5 +21,6 @@ data class HabitEntity(
     val trackingType: TrackingType = TrackingType.BINARY,
     val goalValue: Float = 1f,
     val color: Int? = null,
-    val icon: String? = null
+    val icon: String? = null,
+    val isPaused: Boolean = false
 )

@@ -11,6 +11,15 @@ interface HabitDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHabit(habit: HabitEntity): Long
 
+    @Update
+    suspend fun updateHabit(habit: HabitEntity)
+
+    @Query("DELETE FROM habits WHERE id = :id")
+    suspend fun deleteHabit(id: Long)
+
+    @Query("UPDATE habits SET isPaused = :isPaused WHERE id = :id")
+    suspend fun updatePauseStatus(id: Long, isPaused: Boolean)
+
     @Transaction
     @Query("SELECT * FROM habits ORDER BY createdAt DESC")
     fun getAllHabitsWithCompletions(): Flow<List<HabitWithCompletions>>
@@ -19,11 +28,6 @@ interface HabitDao {
     @Query("SELECT * FROM habits WHERE id = :id")
     fun getHabitWithCompletionsById(id: Long): Flow<HabitWithCompletions?>
 
-    /**
-     * Observes the wallpaper habit. 
-     * The dummy COUNT query ensures that Room tracks the 'completions' table 
-     * so that the Flow emits whenever a habit is marked as done.
-     */
     @Transaction
     @Query("""
         SELECT * FROM habits 

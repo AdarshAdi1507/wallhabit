@@ -21,8 +21,10 @@ import androidx.lifecycle.ViewModelProvider
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
+import com.dev.habitwallpaper.features.habit.presentation.screen.HabitsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.InsightsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 @Composable
@@ -56,15 +58,18 @@ fun NavGraph(
         }
         
         composable(Screen.Habits.route) {
-            // Placeholder for Habits list if separate from Home
-            val viewModel: HomeViewModel = viewModel(
+            val viewModel: HabitsViewModel = viewModel(
                 factory = HabitViewModelFactory(repository, context)
             )
-            HomeScreen(
+            HabitsScreen(
                 viewModel = viewModel,
                 onAddHabit = { navController.navigate(Screen.HabitSetup.route) },
                 onHabitClick = { habitId -> navController.navigate(Screen.HabitDetail.createRoute(habitId)) },
-                onWallpaperClick = { navController.navigate(Screen.Wallpaper.route) }
+                onEditHabit = { habitId ->
+                    // Assuming edit is handled by HabitSetup with an ID or similar
+                    // For now, navigating to detail as a placeholder if no direct edit screen
+                    navController.navigate(Screen.HabitDetail.createRoute(habitId))
+                }
             )
         }
 
@@ -144,6 +149,13 @@ class HabitViewModelFactory(
                     GetHabitsUseCase(repository),
                     repository,
                     context
+                ) as T
+            }
+            modelClass.isAssignableFrom(HabitsViewModel::class.java) -> {
+                @Suppress("UNCHECKED_CAST")
+                HabitsViewModel(
+                    GetHabitsUseCase(repository),
+                    repository
                 ) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class")

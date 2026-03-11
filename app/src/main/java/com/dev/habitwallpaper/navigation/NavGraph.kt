@@ -25,6 +25,7 @@ import com.dev.habitwallpaper.features.habit.presentation.screen.HabitsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.InsightsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewModel
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 @Composable
@@ -74,8 +75,8 @@ fun NavGraph(
         }
 
         composable(Screen.Insights.route) {
-            val viewModel: HomeViewModel = viewModel(
-                factory = HabitViewModelFactory(repository, context)
+            val viewModel: InsightsViewModel = viewModel(
+                factory = InsightsViewModelFactory(repository)
             )
             InsightsScreen(viewModel = viewModel)
         }
@@ -195,3 +196,16 @@ class WallpaperSelectionViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+
+class InsightsViewModelFactory(
+    private val repository: HabitRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(InsightsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return InsightsViewModel(GetHabitsUseCase(repository)) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+

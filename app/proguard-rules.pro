@@ -19,3 +19,50 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep line numbers for crash reports
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# ── Room ──────────────────────────────────────────────────────────────────────
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-keep @androidx.room.Dao interface *
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    abstract *;
+}
+
+# ── App data models ───────────────────────────────────────────────────────────
+-keep class com.dev.habitwallpaper.domain.model.** { *; }
+-keep class com.dev.habitwallpaper.data.** { *; }
+
+# ── Kotlin ────────────────────────────────────────────────────────────────────
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class **$WhenMappings { *; }
+-keepclassmembers class kotlin.Lazy { *; }
+
+# ── Coroutines ────────────────────────────────────────────────────────────────
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
+
+# ── Firebase / Crashlytics ────────────────────────────────────────────────────
+-keepattributes *Annotation*
+-keepattributes Signature
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# ── Jetpack Compose ───────────────────────────────────────────────────────────
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
+# ── Lifecycle / ViewModel ─────────────────────────────────────────────────────
+-keep class androidx.lifecycle.** { *; }
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>(...);
+}
+
+# ── Navigation ────────────────────────────────────────────────────────────────
+-keep class androidx.navigation.** { *; }

@@ -76,11 +76,16 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (uiState.habits.isEmpty()) {
-            EmptyState(onAddHabit)
+            EmptyState(onAddHabit, innerPadding)
         } else {
             HomeContent(
                 uiState = uiState,
@@ -195,9 +200,9 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // 2. Habit Identity Row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -216,9 +221,9 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                         modifier = Modifier.size(28.dp)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
+
                 Column {
                     Text(
                         habit.name,
@@ -226,7 +231,7 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         color = contentColor
                     )
-                    
+
                     // 3. Streak and Progress Information
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -245,9 +250,9 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // 4. Recent Activity Preview (Last 7 Days)
             ConsistencyIndicatorRow(
                 habit = habit,
@@ -255,9 +260,9 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                 completedColor = if (isCompleted) contentColor else null,
                 missedColor = if (isCompleted) contentColor.copy(alpha = 0.2f) else null
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // 5. Completion Status
             if (isCompleted) {
                 Surface(
@@ -400,7 +405,7 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                         )
                     }
                 }
-                
+
                 IconButton(
                     onClick = onToggle,
                     modifier = Modifier
@@ -417,7 +422,7 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
             HabitConsistencyPreview(habit)
         }
@@ -447,7 +452,7 @@ fun ConsistencyIndicatorRow(
 ) {
     val today = LocalDate.now()
     val last7Days = (0..6).reversed().map { today.minusDays(it.toLong()) }
-    
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -455,13 +460,13 @@ fun ConsistencyIndicatorRow(
         last7Days.forEach { date ->
             val isBeforeStart = date.isBefore(habit.startDate)
             val isCompleted = habit.completedDates.contains(date)
-            
+
             val boxColor = when {
                 isBeforeStart -> contentColor.copy(alpha = 0.05f)
                 isCompleted -> completedColor ?: habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()
                 else -> missedColor ?: HabitColors.GRID_EMPTY.toCompose()
             }
-            
+
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -509,9 +514,9 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Wallpaper Habit",
@@ -533,7 +538,7 @@ fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {
                     )
                 }
             }
-            
+
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Navigate",
@@ -585,8 +590,13 @@ fun NumericCompletionDialog(
 }
 
 @Composable
-fun EmptyState(onAddHabit: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+fun EmptyState(onAddHabit: () -> Unit, innerPadding: PaddingValues = PaddingValues()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        contentAlignment = Alignment.Center
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
             Icon(
                 Icons.Default.SelfImprovement,

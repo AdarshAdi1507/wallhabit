@@ -13,7 +13,6 @@ class HabitApplication : Application() {
             HabitDatabase::class.java,
             HabitDatabase.DATABASE_NAME
         )
-        .fallbackToDestructiveMigration()
         .build()
     }
 

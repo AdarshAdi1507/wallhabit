@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
 import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.DayConsistency
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsUiState
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsViewModel
@@ -122,7 +123,7 @@ private fun InsightsDashboard(
         item { ConsistencyHeatmap(days = uiState.heatmapDays, range = uiState.selectedRange) }
         item { InsightsSectionTitle("Habit Performance") }
         val habitsToShow = if (showAllHabits) uiState.sortedHabits else uiState.sortedHabits.take(3)
-        items(habitsToShow) { habit -> HabitPerformanceRow(habit = habit) }
+        items(habitsToShow, key = { it.id }) { habit -> HabitPerformanceRow(habit = habit) }
         if (uiState.sortedHabits.size > 3) {
             item {
                 TextButton(onClick = onToggleShowAll, modifier = Modifier.fillMaxWidth()) {
@@ -453,11 +454,65 @@ private fun MiniActivityGrid(habit: Habit) {
 //  5. Progress Trends — bar chart via Canvas
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Owns exactly ONE [animateFloatAsState] for a single chart bar and writes the
+ * current animated value into [rates][index].
+ *
+ * Why a separate composable?
+ * Composable calls must be stable in count and order between recompositions.
+ * Calling [animateFloatAsState] inside a `bars.map {}` loop violates this rule:
+ * when the time range switches (e.g. WEEK→MONTH the count goes 7→4), Compose would
+ * see a different number of animation-state slots and produce a runtime crash or
+ * silently misassign animation values.
+ *
+ * By extracting each bar into its own composable and wrapping it with [key], each
+ * bar occupies a fixed, labelled slot in the composition tree regardless of list
+ * length changes.
+ */
+@Composable
+private fun AnimatedBarValue(
+    targetRate: Float,
+    index: Int,
+    rates: FloatArray,
+    onUpdate: () -> Unit
+) {
+    val animated by animateFloatAsState(
+        targetValue = targetRate,
+        animationSpec = tween(durationMillis = 800),
+        label = "bar_$index"
+    )
+    // Write into the shared array so the Canvas (a non-composable lambda) can read it.
+    rates[index] = animated
+    // Notify the parent that a new frame value is ready; parent re-draws the Canvas.
+    onUpdate()
+}
+
 @Composable
 private fun ProgressTrendsChart(bars: List<WeeklyBar>, range: TimeRange) {
     if (bars.isEmpty()) return
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+
+    // Allocated once per bar-count change; AnimatedBarValue fills it each frame.
+    val animatedRates = remember(bars.size) { FloatArray(bars.size) }
+
+    // Incrementing this causes only the Canvas lambda to re-read animatedRates[],
+    // not the entire composable tree, keeping recomposition cost minimal.
+    var drawTick by remember { mutableIntStateOf(0) }
+
+    // One composable per bar — each owns an independent, stable animation slot.
+    // key(bar.label) guarantees correct slot reuse/reset when bars are replaced
+    // (e.g. day labels Mon–Sun ↔ week labels W1–W4) between time range switches.
+    bars.forEachIndexed { i, bar ->
+        key(bar.label) {
+            AnimatedBarValue(
+                targetRate = bar.completionRate,
+                index      = i,
+                rates      = animatedRates,
+                onUpdate   = { drawTick++ }
+            )
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -477,20 +532,18 @@ private fun ProgressTrendsChart(bars: List<WeeklyBar>, range: TimeRange) {
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            val animatedRates = bars.map { bar ->
-                animateFloatAsState(
-                    targetValue = bar.completionRate,
-                    animationSpec = tween(durationMillis = 800),
-                    label = "bar_${bar.label}"
-                ).value
-            }
-
-            Canvas(modifier = Modifier.fillMaxWidth().height(140.dp)) {
-                val barCount = bars.size
-                val totalWidth = size.width
+            // drawTick is read here so this Canvas lambda re-executes on every
+            // animation frame tick, painting the latest values from animatedRates[].
+            Canvas(modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+            ) {
+                @Suppress("UNUSED_EXPRESSION") drawTick // establish read dependency
+                val barCount    = bars.size
+                val totalWidth  = size.width
                 val chartHeight = size.height - 24.dp.toPx()
-                val barWidth = (totalWidth / barCount) * 0.55f
-                val barSpacing = totalWidth / barCount
+                val barWidth    = (totalWidth / barCount) * 0.55f
+                val barSpacing  = totalWidth / barCount
 
                 for (pct in listOf(0.25f, 0.5f, 0.75f, 1f)) {
                     val y = chartHeight * (1f - pct)
@@ -503,17 +556,17 @@ private fun ProgressTrendsChart(bars: List<WeeklyBar>, range: TimeRange) {
                 bars.forEachIndexed { i, _ ->
                     val centerX = barSpacing * i + barSpacing / 2f
                     val barLeft = centerX - barWidth / 2f
-                    val barH = (animatedRates[i] * chartHeight).coerceAtLeast(4.dp.toPx())
+                    val barH    = (animatedRates[i] * chartHeight).coerceAtLeast(4.dp.toPx())
                     drawRoundRect(
-                        color = surfaceVariantColor,
-                        topLeft = Offset(barLeft, 0f),
-                        size = Size(barWidth, chartHeight),
+                        color        = surfaceVariantColor,
+                        topLeft      = Offset(barLeft, 0f),
+                        size         = Size(barWidth, chartHeight),
                         cornerRadius = CornerRadius(6.dp.toPx())
                     )
                     drawRoundRect(
-                        color = primaryColor,
-                        topLeft = Offset(barLeft, chartHeight - barH),
-                        size = Size(barWidth, barH),
+                        color        = primaryColor,
+                        topLeft      = Offset(barLeft, chartHeight - barH),
+                        size         = Size(barWidth, barH),
                         cornerRadius = CornerRadius(6.dp.toPx())
                     )
                 }

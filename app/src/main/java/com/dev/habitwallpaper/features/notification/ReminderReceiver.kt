@@ -9,13 +9,27 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.dev.habitwallpaper.HabitApplication
 import com.dev.habitwallpaper.MainActivity
+import com.dev.habitwallpaper.core.notification.AlarmScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class ReminderReceiver : BroadcastReceiver() {
+    
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            // TODO: Reschedule all alarms. This would require repository access.
-            // For now, focus on the notification delivery.
+        val action = intent.action
+        
+        if (action == Intent.ACTION_BOOT_COMPLETED || 
+            action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
+            action == "com.htc.intent.action.QUICKBOOT_POWERON"
+        ) {
+            rescheduleAllAlarms(context)
             return
         }
 
@@ -40,6 +54,31 @@ class ReminderReceiver : BroadcastReceiver() {
                     "Time to start your habit: $habitName", 
                     true
                 )
+            }
+        }
+    }
+
+    private fun rescheduleAllAlarms(context: Context) {
+        val pendingResult = goAsync()
+        val application = context.applicationContext as HabitApplication
+        val repository = application.repository
+        val alarmScheduler = AlarmScheduler(context)
+
+        scope.launch {
+            try {
+                // Fetch all habits from the database
+                // Note: We use first() to get the current list from the Flow
+                val habits = repository.getAllHabits().first()
+                
+                habits.forEach { habit ->
+                    if (!habit.isPaused && habit.reminderTime != null) {
+                        alarmScheduler.scheduleHabitReminders(habit)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                pendingResult.finish()
             }
         }
     }

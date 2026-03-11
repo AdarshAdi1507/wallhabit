@@ -25,6 +25,10 @@ interface HabitDao {
     fun getAllHabitsWithCompletions(): Flow<List<HabitWithCompletions>>
 
     @Transaction
+    @Query("SELECT * FROM habits")
+    suspend fun getAllHabitsSync(): List<HabitWithCompletions>
+
+    @Transaction
     @Query("SELECT * FROM habits WHERE id = :id")
     fun getHabitWithCompletionsById(id: Long): Flow<HabitWithCompletions?>
 

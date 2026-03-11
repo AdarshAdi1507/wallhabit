@@ -1,9 +1,8 @@
 package com.dev.habitwallpaper.features.habit.presentation.viewmodel
 
-import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dev.habitwallpaper.core.wallpaper.WallpaperManager
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.domain.usecase.GetHabitsUseCase
@@ -27,7 +26,7 @@ data class HomeUiState(
 class HomeViewModel(
     private val getHabitsUseCase: GetHabitsUseCase,
     private val repository: HabitRepository,
-    private val context: Context
+    private val wallpaperManager: WallpaperManager
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = getHabitsUseCase()
@@ -74,13 +73,8 @@ class HomeViewModel(
             
             // If this is the wallpaper habit, trigger an update
             if (habit.isWallpaperSelected) {
-                triggerWallpaperUpdate()
+                wallpaperManager.triggerUpdate()
             }
         }
-    }
-
-    private fun triggerWallpaperUpdate() {
-        val intent = Intent("com.dev.habitwallpaper.UPDATE_WALLPAPER")
-        context.sendBroadcast(intent)
     }
 }

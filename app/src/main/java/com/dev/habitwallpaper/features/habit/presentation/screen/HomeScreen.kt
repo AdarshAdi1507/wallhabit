@@ -34,6 +34,7 @@ import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
 import com.dev.habitwallpaper.features.habit.presentation.component.MiniWallpaperPreview
+import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,7 +157,7 @@ fun HomeContent(
             )
         }
 
-        items(uiState.habits) { habit ->
+        items(uiState.habits, key = { it.id }) { habit ->
             HabitCardV2(
                 habit = habit,
                 onToggle = { onToggle(habit) },

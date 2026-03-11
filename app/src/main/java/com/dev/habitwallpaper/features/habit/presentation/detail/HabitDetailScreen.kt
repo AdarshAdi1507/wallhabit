@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,8 @@ import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.core.wallpaper.LiveWallpaperService
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.model.TrackingType
+import com.dev.habitwallpaper.features.habit.presentation.util.displayName
+import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -372,7 +375,7 @@ fun ConsistencyMap(habit: Habit) {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        items(weeks) { week ->
+                        itemsIndexed(weeks, key = { index, _ -> index }) { _, week ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 week.forEach { date ->
                                     if (date == null) {
@@ -482,7 +485,7 @@ fun RecentLoggedValues(habit: Habit) {
                     modifier = Modifier.padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(recentCompletions) { completion ->
+                    items(recentCompletions, key = { it.date.toEpochDay() }) { completion ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 completion.date.format(DateTimeFormatter.ofPattern("EEE")),

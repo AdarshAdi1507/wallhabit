@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
 import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitFilter
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.component.ConsistencyIndicatorRow

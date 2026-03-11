@@ -1,6 +1,5 @@
 package com.dev.habitwallpaper.navigation
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +18,7 @@ import com.dev.habitwallpaper.features.habit.presentation.detail.HabitDetailView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
+import com.dev.habitwallpaper.core.wallpaper.WallpaperManager
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.HabitsScreen
@@ -67,8 +67,6 @@ fun NavGraph(
                 onAddHabit = { navController.navigate(Screen.HabitSetup.route) },
                 onHabitClick = { habitId -> navController.navigate(Screen.HabitDetail.createRoute(habitId)) },
                 onEditHabit = { habitId ->
-                    // Assuming edit is handled by HabitSetup with an ID or similar
-                    // For now, navigating to detail as a placeholder if no direct edit screen
                     navController.navigate(Screen.HabitDetail.createRoute(habitId))
                 }
             )
@@ -132,16 +130,21 @@ fun NavGraph(
 
 class HabitViewModelFactory(
     private val repository: HabitRepository,
-    private val context: Context
+    private val context: android.content.Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        // Important: Use applicationContext to avoid leaking Activity context
+        val appContext = context.applicationContext
+        val wallpaperManager = WallpaperManager(appContext)
+        val alarmScheduler = AlarmScheduler(appContext)
+
         return when {
             modelClass.isAssignableFrom(HabitViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
                 HabitViewModel(
                     CreateHabitUseCase(repository),
-                    AlarmScheduler(context),
-                    context
+                    alarmScheduler,
+                    wallpaperManager
                 ) as T
             }
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
@@ -149,7 +152,7 @@ class HabitViewModelFactory(
                 HomeViewModel(
                     GetHabitsUseCase(repository),
                     repository,
-                    context
+                    wallpaperManager
                 ) as T
             }
             modelClass.isAssignableFrom(HabitsViewModel::class.java) -> {
@@ -208,4 +211,3 @@ class InsightsViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-

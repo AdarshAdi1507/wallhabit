@@ -49,6 +49,7 @@ fun HomeScreen(
     var habitForNumericInput by remember { mutableStateOf<Habit?>(null) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -615,7 +616,11 @@ fun EmptyState(onAddHabit: () -> Unit, innerPadding: PaddingValues = PaddingValu
             .padding(innerPadding),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
             Icon(
                 Icons.Default.SelfImprovement,
                 contentDescription = null,

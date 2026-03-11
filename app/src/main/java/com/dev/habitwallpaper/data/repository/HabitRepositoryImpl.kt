@@ -12,8 +12,9 @@ import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import javax.inject.Inject
 
-class HabitRepositoryImpl(
+class HabitRepositoryImpl @Inject constructor(
     private val habitDao: HabitDao
 ) : HabitRepository {
     override suspend fun insertHabit(habit: Habit): Long {

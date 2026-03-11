@@ -1,26 +1,32 @@
 package com.dev.habitwallpaper.features.habit.presentation.detail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.domain.usecase.GetHabitUseCase
 import com.dev.habitwallpaper.domain.usecase.SetWallpaperHabitUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import javax.inject.Inject
 
 data class HabitDetailUiState(
     val habit: Habit? = null,
     val isLoading: Boolean = true
 )
 
-class HabitDetailViewModel(
-    private val habitId: Long,
+@HiltViewModel
+class HabitDetailViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val getHabitUseCase: GetHabitUseCase,
     private val setWallpaperHabitUseCase: SetWallpaperHabitUseCase,
     private val repository: HabitRepository
 ) : ViewModel() {
+
+    private val habitId: Long = checkNotNull(savedStateHandle["habitId"])
 
     private val _uiState = MutableStateFlow(HabitDetailUiState())
     val uiState: StateFlow<HabitDetailUiState> = _uiState.asStateFlow()

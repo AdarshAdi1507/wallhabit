@@ -9,15 +9,18 @@ import com.dev.habitwallpaper.domain.model.HabitCategory
 import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.domain.usecase.CreateHabitUseCase
 import com.dev.habitwallpaper.features.habit.presentation.state.HabitUIState
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import javax.inject.Inject
 
 @OptIn(FlowPreview::class)
-class HabitViewModel(
+@HiltViewModel
+class HabitViewModel @Inject constructor(
     private val createHabitUseCase: CreateHabitUseCase,
     private val alarmScheduler: AlarmScheduler,
     private val wallpaperManager: WallpaperManager

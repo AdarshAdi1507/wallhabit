@@ -10,12 +10,11 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.navigation.BottomNavItem
 import com.dev.habitwallpaper.navigation.NavGraph
 
 @Composable
-fun MainScreen(repository: HabitRepository) {
+fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -60,7 +59,6 @@ fun MainScreen(repository: HabitRepository) {
     ) { innerPadding ->
         NavGraph(
             navController = navController,
-            repository = repository,
             modifier = Modifier.padding(innerPadding)
         )
     }

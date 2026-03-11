@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
+    alias(libs.plugins.hilt.android)
 }
 
 // Load local.properties for signing credentials
@@ -26,8 +27,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
+        testInstrumentationRunner = "com.google.dagger.hilt.android.testing.HiltTestRunner"
+
         // Export Room schema for migration testing
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -117,6 +118,11 @@ dependencies {
     
     // Room Testing for Migrations
     androidTestImplementation(libs.androidx.room.testing)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

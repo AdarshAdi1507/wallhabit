@@ -9,27 +9,33 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.dev.habitwallpaper.HabitApplication
 import com.dev.habitwallpaper.MainActivity
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
+import com.dev.habitwallpaper.domain.repository.HabitRepository
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ReminderReceiver : BroadcastReceiver() {
-    
+
+    @Inject lateinit var repository: HabitRepository
+    @Inject lateinit var alarmScheduler: AlarmScheduler
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
-        
-        if (action == Intent.ACTION_BOOT_COMPLETED || 
+
+        if (action == Intent.ACTION_BOOT_COMPLETED ||
             action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
             action == "com.htc.intent.action.QUICKBOOT_POWERON"
         ) {
-            rescheduleAllAlarms(context)
+            rescheduleAllAlarms()
             return
         }
 
@@ -40,36 +46,29 @@ class ReminderReceiver : BroadcastReceiver() {
         if (habitId != -1L) {
             if (isPreReminder) {
                 showNotification(
-                    context, 
-                    habitId.toInt(), 
-                    "Upcoming Habit", 
+                    context,
+                    habitId.toInt(),
+                    "Upcoming Habit",
                     "Your habit '$habitName' is going to start in 10 mins",
                     false
                 )
             } else {
                 showNotification(
-                    context, 
-                    habitId.toInt() + 1000, 
-                    "Habit Reminder", 
-                    "Time to start your habit: $habitName", 
+                    context,
+                    habitId.toInt() + 1000,
+                    "Habit Reminder",
+                    "Time to start your habit: $habitName",
                     true
                 )
             }
         }
     }
 
-    private fun rescheduleAllAlarms(context: Context) {
+    private fun rescheduleAllAlarms() {
         val pendingResult = goAsync()
-        val application = context.applicationContext as HabitApplication
-        val repository = application.repository
-        val alarmScheduler = AlarmScheduler(context)
-
         scope.launch {
             try {
-                // Fetch all habits from the database
-                // Note: We use first() to get the current list from the Flow
                 val habits = repository.getAllHabits().first()
-                
                 habits.forEach { habit ->
                     if (!habit.isPaused && habit.reminderTime != null) {
                         alarmScheduler.scheduleHabitReminders(habit)
@@ -108,7 +107,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        
+
         val pendingIntent = PendingIntent.getActivity(
             context,
             notificationId,

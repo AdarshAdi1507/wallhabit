@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.domain.usecase.GetHabitsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class HabitsUiState(
     val habits: List<Habit> = emptyList(),
@@ -22,7 +24,8 @@ enum class HabitFilter(val displayName: String) {
     PAUSED("Paused")
 }
 
-class HabitsViewModel(
+@HiltViewModel
+class HabitsViewModel @Inject constructor(
     private val getHabitsUseCase: GetHabitsUseCase,
     private val repository: HabitRepository
 ) : ViewModel() {

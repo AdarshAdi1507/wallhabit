@@ -8,11 +8,11 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
-import com.dev.habitwallpaper.HabitApplication
 import com.dev.habitwallpaper.domain.usecase.GenerateWallpaperStateUseCase
 import com.dev.habitwallpaper.domain.usecase.GridCellState
 import com.dev.habitwallpaper.domain.usecase.ObserveWallpaperHabitUseCase
 import com.dev.habitwallpaper.domain.usecase.WallpaperState
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,8 +21,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlin.math.ceil
 import kotlin.math.min
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class LiveWallpaperService : WallpaperService() {
+
+    @Inject lateinit var observeWallpaperHabitUseCase: ObserveWallpaperHabitUseCase
+    @Inject lateinit var generateWallpaperStateUseCase: GenerateWallpaperStateUseCase
 
     override fun onCreateEngine(): Engine = HabitWallpaperEngine()
 
@@ -85,14 +90,9 @@ class LiveWallpaperService : WallpaperService() {
         }
 
         private fun observeWallpaperHabit() {
-            val app = application as HabitApplication
-            val repository = app.repository
-            val observeUseCase = ObserveWallpaperHabitUseCase(repository)
-            val generateUseCase = GenerateWallpaperStateUseCase()
-
-            observeUseCase()
+            observeWallpaperHabitUseCase()
                 .onEach { habit ->
-                    wallpaperState = generateUseCase(habit)
+                    wallpaperState = generateWallpaperStateUseCase(habit)
                     draw()
                 }
                 .launchIn(scope!!)

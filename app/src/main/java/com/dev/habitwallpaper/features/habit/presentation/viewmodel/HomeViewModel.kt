@@ -6,12 +6,14 @@ import com.dev.habitwallpaper.core.wallpaper.WallpaperManager
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.domain.usecase.GetHabitsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import javax.inject.Inject
 
 data class HomeUiState(
     val habits: List<Habit> = emptyList(),
@@ -23,7 +25,8 @@ data class HomeUiState(
     val isLoading: Boolean = true
 )
 
-class HomeViewModel(
+@HiltViewModel
+class HomeViewModel @Inject constructor(
     private val getHabitsUseCase: GetHabitsUseCase,
     private val repository: HabitRepository,
     private val wallpaperManager: WallpaperManager

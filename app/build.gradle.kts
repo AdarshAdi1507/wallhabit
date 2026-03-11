@@ -27,6 +27,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Export Room schema for migration testing
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     signingConfigs {
@@ -109,6 +114,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.firebase.crashlytics)
     ksp(libs.androidx.room.compiler)
+    
+    // Room Testing for Migrations
+    androidTestImplementation(libs.androidx.room.testing)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

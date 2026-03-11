@@ -48,7 +48,7 @@ fun HabitsScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Search Field
                 OutlinedTextField(
                     value = uiState.searchQuery,
@@ -64,9 +64,9 @@ fun HabitsScreen(
                     ),
                     singleLine = true
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Filter Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -159,7 +159,7 @@ fun HabitManagementCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (habit.isPaused) MaterialTheme.colorScheme.surface.copy(alpha = 0.6f) 
+            containerColor = if (habit.isPaused) MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
                             else MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -245,11 +245,11 @@ fun HabitManagementCard(
                         )
                         DropdownMenuItem(
                             text = { Text(if (habit.isPaused) "Resume Habit" else "Pause Habit") },
-                            leadingIcon = { 
+                            leadingIcon = {
                                 Icon(
-                                    if (habit.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause, 
+                                    if (habit.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                                     contentDescription = null
-                                ) 
+                                )
                             },
                             onClick = {
                                 showMenu = false

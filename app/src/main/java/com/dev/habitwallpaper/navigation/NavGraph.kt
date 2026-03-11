@@ -14,23 +14,38 @@ import com.dev.habitwallpaper.features.habit.presentation.screen.HabitSetupScree
 import com.dev.habitwallpaper.features.habit.presentation.screen.HabitsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.InsightsScreen
+import com.dev.habitwallpaper.features.habit.presentation.screen.OnboardingScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsViewModel
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.OnboardingViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: String = Screen.Home.route
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Onboarding.route) {
+            val viewModel: OnboardingViewModel = hiltViewModel()
+            OnboardingScreen(
+                viewModel = viewModel,
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Home.route) {
             val viewModel: HomeViewModel = hiltViewModel()
             HomeScreen(

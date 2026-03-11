@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.usecase.GetHabitsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import javax.inject.Inject
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Public data types (unchanged API — InsightsScreen reads these)
@@ -87,7 +89,8 @@ private data class HabitsIndex(
 //  ViewModel
 // ─────────────────────────────────────────────────────────────────────────────
 
-class InsightsViewModel(
+@HiltViewModel
+class InsightsViewModel @Inject constructor(
     private val getHabitsUseCase: GetHabitsUseCase
 ) : ViewModel() {
 

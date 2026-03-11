@@ -10,19 +10,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.dev.habitwallpaper.features.habit.presentation.screen.MainScreen
 import com.dev.habitwallpaper.ui.theme.HabitWallpaperTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val repository = (application as HabitApplication).repository
         setContent {
             HabitWallpaperTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(repository = repository)
+                    MainScreen()
                 }
             }
         }

@@ -2,6 +2,7 @@ package com.dev.habitwallpaper.domain.usecase
 
 import com.dev.habitwallpaper.domain.model.Habit
 import java.time.LocalDate
+import javax.inject.Inject
 
 data class WallpaperState(
     val habitName: String,
@@ -17,7 +18,7 @@ data class GridCellState(
     val isPadding: Boolean = false
 )
 
-class GenerateWallpaperStateUseCase {
+class GenerateWallpaperStateUseCase @Inject constructor() {
     operator fun invoke(habit: Habit?): WallpaperState? {
         if (habit == null) return null
         

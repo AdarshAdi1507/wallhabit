@@ -117,6 +117,16 @@ fun HomeScreen(
 }
 
 @Composable
+fun UserGreeting(name: String) {
+    Text(
+        text = "Hi, $name",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onBackground
+    )
+}
+
+@Composable
 fun HomeContent(
     uiState: HomeUiState,
     innerPadding: PaddingValues,
@@ -131,6 +141,13 @@ fun HomeContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        // 0. User greeting
+        uiState.userName?.takeIf { it.isNotBlank() }?.let { name ->
+            item(key = "greeting") {
+                UserGreeting(name = name)
+            }
+        }
+
         // 1. Focus Habit Section
         uiState.focusHabit?.let { habit ->
             item {

@@ -1,6 +1,11 @@
 package com.dev.habitwallpaper.features.habit.presentation.screen
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,9 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.dev.habitwallpaper.core.utils.DateUtils
 import com.dev.habitwallpaper.domain.model.HabitCategory
 import com.dev.habitwallpaper.domain.model.TrackingType
+import com.dev.habitwallpaper.features.habit.presentation.util.displayName
+import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitViewModel
 import java.time.DayOfWeek
 import java.time.Instant
@@ -56,6 +64,18 @@ fun HabitSetupScreen(
     
     val context = LocalContext.current
     val is24Hour = DateFormat.is24HourFormat(context)
+
+    // Permission Launcher for Android 13+ Notification Permission
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onReminderEnabledChange(true)
+        } else {
+            // If denied, we ensure the switch stays off
+            viewModel.onReminderEnabledChange(false)
+        }
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -298,7 +318,27 @@ fun HabitSetupScreen(
                             Text("Enable Notifications", style = MaterialTheme.typography.bodyLarge)
                             Switch(
                                 checked = uiState.isReminderEnabled,
-                                onCheckedChange = { viewModel.onReminderEnabledChange(it) }
+                                onCheckedChange = { enabled ->
+                                    if (enabled) {
+                                        // Request Permission for Android 13+
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            val permissionCheck = ContextCompat.checkSelfPermission(
+                                                context,
+                                                Manifest.permission.POST_NOTIFICATIONS
+                                            )
+                                            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                                                viewModel.onReminderEnabledChange(true)
+                                            } else {
+                                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            }
+                                        } else {
+                                            // Pre-Android 13, permission is granted at install time
+                                            viewModel.onReminderEnabledChange(true)
+                                        }
+                                    } else {
+                                        viewModel.onReminderEnabledChange(false)
+                                    }
+                                }
                             )
                         }
 

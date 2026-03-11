@@ -1,10 +1,9 @@
 package com.dev.habitwallpaper.features.habit.presentation.viewmodel
 
-import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.habitwallpaper.core.notification.AlarmScheduler
+import com.dev.habitwallpaper.core.wallpaper.WallpaperManager
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.model.HabitCategory
 import com.dev.habitwallpaper.domain.model.TrackingType
@@ -21,7 +20,7 @@ import java.time.LocalTime
 class HabitViewModel(
     private val createHabitUseCase: CreateHabitUseCase,
     private val alarmScheduler: AlarmScheduler,
-    private val context: Context
+    private val wallpaperManager: WallpaperManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HabitUIState())
@@ -250,7 +249,7 @@ class HabitViewModel(
                 }
 
                 if (habit.isWallpaperSelected) {
-                    triggerWallpaperUpdate()
+                    wallpaperManager.triggerUpdate()
                 }
 
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
@@ -258,10 +257,5 @@ class HabitViewModel(
                 _uiState.update { it.copy(isSaving = false, error = e.message ?: "Failed to save habit") }
             }
         }
-    }
-
-    private fun triggerWallpaperUpdate() {
-        val intent = Intent("com.dev.habitwallpaper.UPDATE_WALLPAPER")
-        context.sendBroadcast(intent)
     }
 }

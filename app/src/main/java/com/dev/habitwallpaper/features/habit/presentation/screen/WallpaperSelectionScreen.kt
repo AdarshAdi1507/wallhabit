@@ -56,7 +56,7 @@ fun WallpaperSelectionScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(uiState.habits) { habit ->
+                items(uiState.habits, key = { it.id }) { habit ->
                     WallpaperHabitItem(
                         habit = habit,
                         isSelected = habit.isWallpaperSelected,

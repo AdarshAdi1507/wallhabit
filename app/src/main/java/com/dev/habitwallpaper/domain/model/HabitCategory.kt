@@ -1,18 +1,23 @@
 package com.dev.habitwallpaper.domain.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsRun
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.graphics.vector.ImageVector
-
-enum class HabitCategory(val displayName: String, val icon: ImageVector) {
-    HEALTH("Health", Icons.Default.Favorite),
-    FITNESS("Fitness", Icons.AutoMirrored.Filled.DirectionsRun),
-    LEARNING("Learning", Icons.Default.Book),
-    PRODUCTIVITY("Productivity", Icons.Default.Timer),
-    MINDFULNESS("Mindfulness", Icons.Default.SelfImprovement),
-    LIFESTYLE("Lifestyle", Icons.Default.WbSunny),
-    PERSONAL_DEVELOPMENT("Development", Icons.AutoMirrored.Filled.TrendingUp),
-    GENERAL("General", Icons.Default.Category)
+/**
+ * Pure domain enum representing the category of a [Habit].
+ *
+ * This enum contains only business-logic identifiers and carries NO UI dependencies
+ * (no Compose, no Android resources, no display strings). It is intentionally
+ * framework-agnostic so the domain layer remains independently testable.
+ *
+ * UI concerns such as human-readable labels and icons are handled exclusively in
+ * the presentation layer via extension properties defined in:
+ *   `com.dev.habitwallpaper.features.habit.presentation.util.HabitCategoryExt`
+ */
+enum class HabitCategory {
+    HEALTH,
+    FITNESS,
+    LEARNING,
+    PRODUCTIVITY,
+    MINDFULNESS,
+    LIFESTYLE,
+    PERSONAL_DEVELOPMENT,
+    GENERAL
 }

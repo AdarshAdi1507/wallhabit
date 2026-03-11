@@ -1,6 +1,7 @@
 package com.dev.habitwallpaper.features.habit.presentation.screen
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
@@ -41,6 +42,7 @@ fun MainScreen() {
     val shouldShowBottomBar = currentDestination?.route in bottomBarRoutes
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (shouldShowBottomBar) {
                 NavigationBar(

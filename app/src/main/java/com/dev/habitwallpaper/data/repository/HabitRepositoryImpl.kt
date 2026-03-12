@@ -1,13 +1,19 @@
 package com.dev.habitwallpaper.data.repository
 
+import com.dev.habitwallpaper.core.wallpaper.WallpaperManager
+import com.dev.habitwallpaper.data.local.dao.AchievementDao
 import com.dev.habitwallpaper.data.local.dao.HabitDao
+import com.dev.habitwallpaper.data.local.entity.AchievementEntity
 import com.dev.habitwallpaper.data.local.entity.CompletionEntity
 import com.dev.habitwallpaper.data.local.entity.HabitEntity
 import com.dev.habitwallpaper.data.local.relation.HabitWithCompletions
+import com.dev.habitwallpaper.domain.model.Achievement
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.model.HabitCompletion
+import com.dev.habitwallpaper.domain.model.MilestoneThresholds
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -15,7 +21,9 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 class HabitRepositoryImpl @Inject constructor(
-    private val habitDao: HabitDao
+    private val habitDao: HabitDao,
+    private val achievementDao: AchievementDao,
+    private val wallpaperManager: WallpaperManager
 ) : HabitRepository {
     override suspend fun insertHabit(habit: Habit): Long {
         return habitDao.insertHabit(habit.toEntity())
@@ -37,28 +45,86 @@ class HabitRepositoryImpl @Inject constructor(
 
     override suspend fun setAsWallpaperHabit(id: Long) {
         habitDao.updateWallpaperSelection(id)
+        wallpaperManager.triggerUpdate()
     }
 
-    override suspend fun toggleCompletion(habitId: Long, date: LocalDate, value: Float) {
+    override suspend fun toggleCompletion(habitId: Long, date: LocalDate, value: Float): Achievement? {
+        // Enforce no future completions
+        if (date.isAfter(LocalDate.now())) return null
+
         val epochDay = date.toEpochDay()
         val existing = habitDao.getCompletionForDate(habitId, epochDay)
+        
+        var resultAchievement: Achievement? = null
+        
         if (existing != null) {
             habitDao.deleteCompletion(existing)
+            val newStreak = recalculateStreak(habitId)
+            // If streak decreased, remove achievements that are no longer reached
+            achievementDao.deleteAchievementsAboveStreak(habitId, newStreak)
         } else {
             habitDao.insertCompletion(CompletionEntity(habitId = habitId, date = epochDay, value = value))
+            val newStreak = recalculateStreak(habitId)
+            val milestone = MilestoneThresholds.getMilestoneForStreak(newStreak)
+            
+            if (milestone != null) {
+                val alreadyHas = achievementDao.hasAchievement(habitId, milestone.value)
+                if (!alreadyHas) {
+                    val achievement = AchievementEntity(
+                        habitId = habitId,
+                        milestoneValue = milestone.value,
+                        milestoneTitle = milestone.title,
+                        achievedDate = LocalDate.now().toEpochDay()
+                    )
+                    achievementDao.insertAchievement(achievement)
+                    resultAchievement = Achievement(
+                        habitId = habitId,
+                        milestoneValue = milestone.value,
+                        milestoneTitle = milestone.title,
+                        achievedDate = LocalDate.now()
+                    )
+                }
+            }
         }
+        
+        wallpaperManager.triggerUpdate()
+        return resultAchievement
     }
 
     override suspend fun updateHabit(habit: Habit) {
         habitDao.updateHabit(habit.toEntity())
+        wallpaperManager.triggerUpdate()
     }
 
     override suspend fun deleteHabit(habitId: Long) {
         habitDao.deleteHabit(habitId)
+        wallpaperManager.triggerUpdate()
     }
 
     override suspend fun pauseHabit(habitId: Long, isPaused: Boolean) {
         habitDao.updatePauseStatus(habitId, isPaused)
+    }
+
+    override fun getAchievementsForHabit(habitId: Long): Flow<List<Achievement>> {
+        return achievementDao.getAchievementsForHabit(habitId).map { list ->
+            list.map { 
+                Achievement(
+                    id = it.id,
+                    habitId = it.habitId,
+                    milestoneValue = it.milestoneValue,
+                    milestoneTitle = it.milestoneTitle,
+                    achievedDate = LocalDate.ofEpochDay(it.achievedDate)
+                )
+            }
+        }
+    }
+
+    override suspend fun recalculateStreak(habitId: Long): Int {
+        val habitWithCompletions = habitDao.getHabitWithCompletionsById(habitId).first()
+        return habitWithCompletions?.let { 
+            val completedDates = it.completions.map { c -> LocalDate.ofEpochDay(c.date) }
+            calculateStreak(completedDates)
+        } ?: 0
     }
 
     private fun calculateStreak(completedDates: List<LocalDate>): Int {

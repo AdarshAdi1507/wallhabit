@@ -1,10 +1,16 @@
 package com.dev.habitwallpaper.features.habit.presentation.screen
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,9 +28,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,8 +49,11 @@ import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteUiState
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteViewModel
 import com.dev.habitwallpaper.features.habit.presentation.component.MiniWallpaperPreview
+import com.dev.habitwallpaper.features.habit.presentation.component.ConsistencyIndicatorRow
 import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import java.time.LocalDate
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -278,6 +290,10 @@ fun MotivationCard(quoteUiState: QuoteUiState) {
 @Composable
 fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
     val isCompleted = habit.isCompletedToday
+    val haptic = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
+    val cardScale = remember { Animatable(1f) }
+
     val backgroundColor by animateColorAsState(
         targetValue = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         animationSpec = tween(durationMillis = 500),
@@ -286,7 +302,9 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
     val contentColor = if (isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(cardScale.value),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -392,7 +410,26 @@ fun FocusHabitCard(habit: Habit, onToggle: () -> Unit) {
                 }
             } else {
                 Button(
-                    onClick = onToggle,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        coroutineScope.launch {
+                            cardScale.animateTo(
+                                targetValue = 1.04f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessHigh
+                                )
+                            )
+                            cardScale.animateTo(
+                                targetValue = 1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                )
+                            )
+                        }
+                        onToggle()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp),
@@ -458,9 +495,34 @@ fun DailyProgressSection(completed: Int, total: Int) {
 
 @Composable
 fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // Card scale animation — bounces gently on completion tap
+    val cardScale = remember { Animatable(1f) }
+
+    // Show a brief "✓ Completed today" toast-like banner
+    var showSuccessBanner by remember(habit.id) { mutableStateOf(false) }
+
+    // Animated completion button background colour
+    val buttonBg by animateColorAsState(
+        targetValue = if (habit.isCompletedToday)
+            MaterialTheme.colorScheme.primary
+        else
+            Color(0xFFF0F0F0),
+        animationSpec = tween(durationMillis = 300),
+        label = "CompletionButtonBg_${habit.id}"
+    )
+    val buttonIcon = if (habit.isCompletedToday) Icons.Default.Check else Icons.Default.Add
+    val buttonIconTint = if (habit.isCompletedToday)
+        MaterialTheme.colorScheme.onPrimary
+    else
+        MaterialTheme.colorScheme.primary
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .scale(cardScale.value)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -477,7 +539,8 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                         modifier = Modifier
                             .size(48.dp)
                             .background(
-                                color = habit.color?.let { Color(it).copy(alpha = 0.2f) } ?: MaterialTheme.colorScheme.primaryContainer,
+                                color = habit.color?.let { Color(it).copy(alpha = 0.2f) }
+                                    ?: MaterialTheme.colorScheme.primaryContainer,
                                 shape = RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -507,23 +570,118 @@ fun HabitCardV2(habit: Habit, onToggle: () -> Unit, onClick: () -> Unit) {
                 }
 
                 IconButton(
-                    onClick = onToggle,
+                    onClick = {
+                        if (!habit.isCompletedToday) {
+                            // Trigger haptic confirmation
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            // Bounce the card scale: 1.0 → 1.05 → 1.0
+                            coroutineScope.launch {
+                                cardScale.animateTo(
+                                    targetValue = 1.05f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessHigh
+                                    )
+                                )
+                                cardScale.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMedium
+                                    )
+                                )
+                            }
+                            // Show success banner and auto-dismiss after 2 seconds
+                            coroutineScope.launch {
+                                showSuccessBanner = true
+                                delay(2000)
+                                showSuccessBanner = false
+                            }
+                        }
+                        onToggle()
+                    },
                     modifier = Modifier
                         .size(40.dp)
-                        .background(
-                            color = if (habit.isCompletedToday) MaterialTheme.colorScheme.primary else Color(0xFFF0F0F0),
-                            shape = CircleShape
-                        )
+                        .background(color = buttonBg, shape = CircleShape)
                 ) {
                     Icon(
-                        if (habit.isCompletedToday) Icons.Default.Check else Icons.Default.Add,
+                        imageVector = buttonIcon,
                         contentDescription = "Complete",
-                        tint = if (habit.isCompletedToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                        tint = buttonIconTint
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Success banner: fades in + scales in, auto-dismissed
+            AnimatedVisibility(
+                visible = showSuccessBanner,
+                enter = fadeIn(tween(200)) + scaleIn(tween(200)),
+                exit = fadeOut(tween(250)) + scaleOut(tween(250))
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            "✓ Completed today",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            "🔥 ${habit.currentStreak + 1} Day Streak",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = HabitColors.STREAK_ORANGE.toCompose(),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Already-completed persistent badge (shown after banner auto-dismissed)
+            if (habit.isCompletedToday && !showSuccessBanner) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(300))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            "Completed today  •  🔥 ${habit.currentStreak} day streak",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
             HabitConsistencyPreview(habit)
         }
     }
@@ -543,42 +701,6 @@ fun HabitConsistencyPreview(habit: Habit) {
     }
 }
 
-@Composable
-fun ConsistencyIndicatorRow(
-    habit: Habit,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    completedColor: Color? = null,
-    missedColor: Color? = null
-) {
-    val today = LocalDate.now()
-    val last7Days = (0..6).reversed().map { today.minusDays(it.toLong()) }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        last7Days.forEach { date ->
-            val isBeforeStart = date.isBefore(habit.startDate)
-            val isCompleted = habit.completedDates.contains(date)
-
-            val boxColor = when {
-                isBeforeStart -> contentColor.copy(alpha = 0.05f)
-                isCompleted -> completedColor ?: habit.color?.let { Color(it) } ?: HabitColors.GRID_HIGH.toCompose()
-                else -> missedColor ?: HabitColors.GRID_EMPTY.toCompose()
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(1f)
-                    .background(
-                        color = boxColor,
-                        shape = RoundedCornerShape(6.dp)
-                    )
-            )
-        }
-    }
-}
 
 @Composable
 fun WallpaperPreviewSection(wallpaperHabit: Habit?, onClick: () -> Unit) {

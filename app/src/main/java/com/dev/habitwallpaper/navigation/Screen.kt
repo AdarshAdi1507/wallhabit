@@ -21,6 +21,7 @@ sealed class Screen(val route: String) {
         fun createRoute(habitId: Long) = "habit_detail/$habitId"
     }
     object WallpaperSelection : Screen("wallpaper_selection")
+    object WallpaperCustomization : Screen("wallpaper_customization")
 }
 
 sealed class BottomNavItem(

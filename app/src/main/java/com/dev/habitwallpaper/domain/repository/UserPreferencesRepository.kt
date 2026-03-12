@@ -1,5 +1,6 @@
 package com.dev.habitwallpaper.domain.repository
 
+import com.dev.habitwallpaper.domain.model.WallpaperCustomization
 import kotlinx.coroutines.flow.Flow
 
 interface UserPreferencesRepository {
@@ -20,5 +21,10 @@ interface UserPreferencesRepository {
 
     /** Records that we have already prompted the user for the notification permission. */
     suspend fun markNotificationPermissionRequested()
-}
 
+    /** Emits the current wallpaper customization settings. */
+    val wallpaperCustomization: Flow<WallpaperCustomization>
+
+    /** Updates the wallpaper customization settings. */
+    suspend fun updateWallpaperCustomization(customization: WallpaperCustomization)
+}

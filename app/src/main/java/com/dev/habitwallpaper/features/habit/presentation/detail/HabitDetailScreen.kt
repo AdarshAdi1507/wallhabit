@@ -3,11 +3,13 @@ package com.dev.habitwallpaper.features.habit.presentation.detail
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -23,6 +25,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -36,10 +40,13 @@ import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
 import com.dev.habitwallpaper.core.designsystem.toCompose
 import com.dev.habitwallpaper.core.wallpaper.LiveWallpaperService
+import com.dev.habitwallpaper.domain.model.Achievement
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.domain.model.Milestone
 import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.features.habit.presentation.util.displayName
 import com.dev.habitwallpaper.features.habit.presentation.util.icon
+import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -51,6 +58,17 @@ fun HabitDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var showCelebration by remember { mutableStateOf<Achievement?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            if (event is HabitDetailEvent.AchievementReached) {
+                showCelebration = event.achievement
+                delay(2500)
+                showCelebration = null
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -93,9 +111,30 @@ fun HabitDetailScreen(
                             ) 
                         }
                         item { ProgressOverview(habit) }
+                        
+                        uiState.nextMilestone?.let { milestone ->
+                            item { 
+                                MilestoneProgress(
+                                    currentStreak = habit.currentStreak,
+                                    nextMilestone = milestone,
+                                    daysRemaining = uiState.daysToNextMilestone ?: 0
+                                )
+                            }
+                        }
+
                         item { GoalInformation(habit) }
-                        item { ConsistencyMap(habit) }
+                        item { 
+                            ConsistencyMap(
+                                habit = habit,
+                                onToggleDate = { date -> viewModel.toggleCompletion(date) }
+                            ) 
+                        }
                         item { HabitStatistics(habit) }
+                        
+                        if (uiState.achievements.isNotEmpty()) {
+                            item { AchievementHistory(uiState.achievements) }
+                        }
+
                         if (habit.trackingType == TrackingType.NUMERIC) {
                             item { RecentLoggedValues(habit) }
                         }
@@ -170,9 +209,177 @@ fun HabitDetailScreen(
                             }
                         }
                     }
+
+                    // Celebration Overlay
+                    AnimatedVisibility(
+                        visible = showCelebration != null,
+                        enter = fadeIn() + scaleIn(initialScale = 0.8f),
+                        exit = fadeOut() + scaleOut(targetScale = 1.2f)
+                    ) {
+                        showCelebration?.let { achievement ->
+                            CelebrationCard(achievement)
+                        }
+                    }
                 }
             } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Habit not found")
+            }
+        }
+    }
+}
+
+@Composable
+fun MilestoneProgress(
+    currentStreak: Int,
+    nextMilestone: Milestone,
+    daysRemaining: Int
+) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        SectionHeader("Next Milestone")
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = nextMilestone.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "$daysRemaining days remaining until ${nextMilestone.value} day streak",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = null,
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val progress = if (nextMilestone.value > 0) {
+                    currentStreak.toFloat() / nextMilestone.value.toFloat()
+                } else 0f
+                
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                    color = HabitColors.STREAK_ORANGE.toCompose(),
+                    trackColor = Color(0xFFF0F0F0)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CelebrationCard(achievement: Achievement) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(32.dp).fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "🎉 Milestone Reached!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = HabitColors.FOREST_DEEP.toCompose()
+                )
+                
+                Surface(
+                    shape = CircleShape,
+                    color = HabitColors.STREAK_ORANGE.toCompose().copy(alpha = 0.1f),
+                    modifier = Modifier.size(100.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            "🔥",
+                            fontSize = 48.sp
+                        )
+                    }
+                }
+                
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${achievement.milestoneValue} Day Streak",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = achievement.milestoneTitle,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Gray
+                    )
+                }
+                
+                Text(
+                    "You're making incredible progress! Keep going.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AchievementHistory(achievements: List<Achievement>) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        SectionHeader("Milestone History")
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            items(achievements) { achievement ->
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("🔥 ${achievement.milestoneValue}", fontWeight = FontWeight.Bold)
+                        Text(
+                            achievement.milestoneTitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            achievement.achievedDate.format(DateTimeFormatter.ofPattern("MMM d")),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            color = Color.LightGray
+                        )
+                    }
+                }
             }
         }
     }
@@ -333,7 +540,10 @@ fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ConsistencyMap(habit: Habit) {
+fun ConsistencyMap(
+    habit: Habit,
+    onToggleDate: (LocalDate) -> Unit
+) {
     val today = LocalDate.now()
     val startDate = habit.startDate
     val firstDayOfWeek = startDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
@@ -400,6 +610,11 @@ fun ConsistencyMap(habit: Habit) {
                                                     shape = RoundedCornerShape(6.dp)
                                                 )
                                                 .let { 
+                                                    if (!isFuture) {
+                                                        it.clickable { onToggleDate(date) }
+                                                    } else it
+                                                }
+                                                .let { 
                                                     if (isToday) it.border(1.5.dp, HabitColors.FOREST_DEEP.toCompose(), RoundedCornerShape(6.dp))
                                                     else it
                                                 }
@@ -415,6 +630,15 @@ fun ConsistencyMap(habit: Habit) {
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Tap on past days to toggle completion.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

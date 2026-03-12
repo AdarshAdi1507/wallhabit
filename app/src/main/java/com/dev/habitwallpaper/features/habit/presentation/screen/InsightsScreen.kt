@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
 import com.dev.habitwallpaper.core.designsystem.toCompose
+import com.dev.habitwallpaper.domain.model.Achievement
 import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.DayConsistency
@@ -38,6 +40,7 @@ import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsView
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.TimeRange
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WeeklyBar
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.ceil
@@ -121,6 +124,12 @@ private fun InsightsDashboard(
         }
         item { InsightsSectionTitle("Consistency Heatmap") }
         item { ConsistencyHeatmap(days = uiState.heatmapDays, range = uiState.selectedRange) }
+        
+        if (uiState.allAchievements.isNotEmpty()) {
+            item { InsightsSectionTitle("Recent Milestones") }
+            item { RecentAchievementsRow(uiState.allAchievements) }
+        }
+
         item { InsightsSectionTitle("Habit Performance") }
         val habitsToShow = if (showAllHabits) uiState.sortedHabits else uiState.sortedHabits.take(3)
         items(habitsToShow, key = { it.id }) { habit -> HabitPerformanceRow(habit = habit) }
@@ -372,6 +381,41 @@ private fun HeatmapGrid(
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentAchievementsRow(achievements: List<Achievement>) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp)
+    ) {
+        items(achievements.take(10)) { achievement ->
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("🔥 ${achievement.milestoneValue}", fontWeight = FontWeight.Bold)
+                    Text(
+                        achievement.milestoneTitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                    Text(
+                        achievement.achievedDate.format(DateTimeFormatter.ofPattern("MMM d")),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = Color.LightGray
+                    )
                 }
             }
         }

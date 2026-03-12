@@ -1,6 +1,8 @@
 package com.dev.habitwallpaper.features.habit.presentation.screen
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,7 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.dev.habitwallpaper.domain.model.*
 import com.dev.habitwallpaper.features.habit.presentation.component.WallpaperPreview
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperCustomizationViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +46,18 @@ fun WallpaperCustomizationScreen(
 ) {
     val customization by viewModel.customization.collectAsState()
     val previewState by viewModel.previewState.collectAsState()
+    
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+
+    val scrollToPreview = {
+        scope.launch {
+            scrollState.animateScrollTo(
+                0,
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            )
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -50,7 +69,10 @@ fun WallpaperCustomizationScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.resetToDefault() }) {
+                    IconButton(onClick = { 
+                        viewModel.resetToDefault() 
+                        scrollToPreview()
+                    }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Reset")
                     }
                 },
@@ -73,7 +95,10 @@ fun WallpaperCustomizationScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.resetToDefault() },
+                        onClick = { 
+                            viewModel.resetToDefault()
+                            scrollToPreview()
+                        },
                         modifier = Modifier.weight(0.4f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -82,7 +107,7 @@ fun WallpaperCustomizationScreen(
                     Button(
                         onClick = { 
                             viewModel.applyWallpaper()
-                            onBack() // Navigate back after applying
+                            onBack()
                         },
                         modifier = Modifier.weight(0.6f),
                         shape = RoundedCornerShape(12.dp),
@@ -100,7 +125,7 @@ fun WallpaperCustomizationScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
         ) {
             // Live Preview Panel
             Box(
@@ -110,7 +135,6 @@ fun WallpaperCustomizationScreen(
                     .padding(vertical = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Device Frame Decoration
                 Surface(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -134,7 +158,6 @@ fun WallpaperCustomizationScreen(
             }
 
             Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                // Themes Section
                 StudioSection(title = "Themes", icon = Icons.Default.Palette) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -153,13 +176,16 @@ fun WallpaperCustomizationScreen(
                             StudioOptionCard(
                                 title = name,
                                 isSelected = customization.themeType == name,
-                                onClick = { viewModel.updateCustomization(preset) }
+                                onClick = { 
+                                    viewModel.updateCustomization(preset)
+                                    scrollToPreview()
+                                },
+                                visual = { ThemeVisualPreview(preset) }
                             )
                         }
                     }
                 }
 
-                // Grid Shape Section
                 StudioSection(title = "Grid Shape", icon = Icons.Default.Category) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -169,31 +195,40 @@ fun WallpaperCustomizationScreen(
                             StudioOptionCard(
                                 title = shape.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
                                 isSelected = customization.gridShape == shape,
-                                onClick = { viewModel.updateCustomization(customization.copy(gridShape = shape)) }
+                                onClick = { 
+                                    viewModel.updateCustomization(customization.copy(gridShape = shape))
+                                    scrollToPreview()
+                                },
+                                visual = { ShapeVisualPreview(shape, customization.gridShape == shape) }
                             )
                         }
                     }
                 }
 
-                // Grid Layout Section
                 StudioSection(title = "Grid Layout", icon = Icons.Default.GridView) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            GridLayoutType.entries.forEach { layout ->
-                                FilterChip(
-                                    selected = customization.gridLayoutType == layout,
-                                    onClick = { viewModel.updateCustomization(customization.copy(gridLayoutType = layout)) },
-                                    label = { Text(layout.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                                    shape = RoundedCornerShape(8.dp)
+                            items(GridLayoutType.entries) { layout ->
+                                StudioOptionCard(
+                                    title = layout.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    isSelected = customization.gridLayoutType == layout,
+                                    onClick = { 
+                                        viewModel.updateCustomization(customization.copy(gridLayoutType = layout))
+                                        scrollToPreview()
+                                    },
+                                    visual = { LayoutVisualPreview(layout) }
                                 )
                             }
                         }
                         
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
                                 "Spacing", 
                                 style = MaterialTheme.typography.labelLarge,
@@ -202,7 +237,10 @@ fun WallpaperCustomizationScreen(
                             Spacer(Modifier.width(16.dp))
                             Slider(
                                 value = customization.gridSpacing,
-                                onValueChange = { viewModel.updateCustomization(customization.copy(gridSpacing = it)) },
+                                onValueChange = { 
+                                    viewModel.updateCustomization(customization.copy(gridSpacing = it))
+                                },
+                                onValueChangeFinished = { scrollToPreview() },
                                 valueRange = 2f..30f,
                                 modifier = Modifier.weight(1f)
                             )
@@ -210,17 +248,40 @@ fun WallpaperCustomizationScreen(
                     }
                 }
 
-                // Color Palette Section
                 StudioSection(title = "Color Palette", icon = Icons.Default.ColorLens) {
-                    PaletteSelector(
-                        selectedPalette = customization.paletteName,
-                        onPaletteSelected = { name, color ->
-                            viewModel.updateCustomization(customization.copy(paletteName = name, completedCellColor = color))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val palettes = listOf(
+                            "Matcha Green" to 0xFF4CAF50.toInt(),
+                            "Mint Fresh" to 0xFF58D68D.toInt(),
+                            "Emerald Focus" to 0xFF00C853.toInt(),
+                            "Soft Pastel" to 0xFFFF80AB.toInt(),
+                            "Forest Calm" to 0xFF2E7D32.toInt(),
+                            "Dark Neon" to 0xFFBB86FC.toInt()
+                        )
+                        items(palettes) { (name, color) ->
+                            StudioOptionCard(
+                                title = name,
+                                isSelected = customization.paletteName == name,
+                                onClick = {
+                                    viewModel.updateCustomization(customization.copy(paletteName = name, completedCellColor = color))
+                                    scrollToPreview()
+                                },
+                                visual = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(color))
+                                    )
+                                }
+                            )
                         }
-                    )
+                    }
                 }
 
-                // Background Section
                 StudioSection(title = "Background", icon = Icons.Default.Wallpaper) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -230,13 +291,16 @@ fun WallpaperCustomizationScreen(
                             StudioOptionCard(
                                 title = type.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
                                 isSelected = customization.backgroundType == type,
-                                onClick = { viewModel.updateCustomization(customization.copy(backgroundType = type)) }
+                                onClick = { 
+                                    viewModel.updateCustomization(customization.copy(backgroundType = type))
+                                    scrollToPreview()
+                                },
+                                visual = { BackgroundVisualPreview(type) }
                             )
                         }
                     }
                 }
 
-                // Accent Effects Section
                 StudioSection(title = "Accent Effects", icon = Icons.Default.AutoAwesome) {
                     Card(
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -246,51 +310,144 @@ fun WallpaperCustomizationScreen(
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                             EffectRow("Streak Glow", customization.showGlow) {
                                 viewModel.updateCustomization(customization.copy(showGlow = it))
+                                scrollToPreview()
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             EffectRow("Soft Shadows", customization.showShadow) {
                                 viewModel.updateCustomization(customization.copy(showShadow = it))
+                                scrollToPreview()
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             EffectRow("Highlight Today", customization.highlightToday) {
                                 viewModel.updateCustomization(customization.copy(highlightToday = it))
+                                scrollToPreview()
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             EffectRow("Pulse Animation", customization.pulseEffect) {
                                 viewModel.updateCustomization(customization.copy(pulseEffect = it))
+                                scrollToPreview()
                             }
                         }
                     }
                 }
 
-                // Position Section
                 StudioSection(title = "Position", icon = Icons.Default.Layers) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        GridPosition.entries.forEach { pos ->
-                            val isSelected = customization.gridPosition == pos
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { viewModel.updateCustomization(customization.copy(gridPosition = pos)) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    pos.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
+                        items(GridPosition.entries) { pos ->
+                            StudioOptionCard(
+                                title = pos.name.lowercase().replaceFirstChar { it.uppercase() },
+                                isSelected = customization.gridPosition == pos,
+                                onClick = { 
+                                    viewModel.updateCustomization(customization.copy(gridPosition = pos))
+                                    scrollToPreview()
+                                },
+                                visual = { PositionVisualPreview(pos) }
+                            )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ThemeVisualPreview(customization: WallpaperCustomization) {
+    val bgBrush = when (customization.backgroundType) {
+        BackgroundType.SOLID -> Brush.linearGradient(listOf(Color(customization.backgroundColorStart), Color(customization.backgroundColorStart)))
+        else -> Brush.linearGradient(listOf(Color(customization.backgroundColorStart), Color(customization.backgroundColorEnd)))
+    }
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgBrush)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(
+                    Color(customization.completedCellColor),
+                    getShape(customization.gridShape)
+                )
+        )
+    }
+}
+
+@Composable
+fun ShapeVisualPreview(shape: GridShape, isSelected: Boolean) {
+    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(color, getShape(shape))
+    )
+}
+
+@Composable
+fun BackgroundVisualPreview(type: BackgroundType) {
+    val brush = when (type) {
+        BackgroundType.SOLID -> Brush.linearGradient(listOf(Color.Gray, Color.Gray))
+        BackgroundType.GRADIENT -> Brush.linearGradient(listOf(Color(0xFF64B5F6), Color(0xFF1976D2)))
+        BackgroundType.PASTEL_GRADIENT -> Brush.linearGradient(listOf(Color(0xFFFFD1DC), Color(0xFFB2E2F2)))
+        BackgroundType.NOISE -> Brush.linearGradient(listOf(Color.DarkGray, Color.LightGray))
+        BackgroundType.GLASS_BLUR -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.3f), Color.White.copy(alpha = 0.1f)))
+        BackgroundType.PAPER_TEXTURE -> Brush.linearGradient(listOf(Color(0xFFF5F5DC), Color(0xFFEEDC82)))
+    }
+    Box(modifier = Modifier.fillMaxSize().background(brush))
+}
+
+@Composable
+fun LayoutVisualPreview(layout: GridLayoutType) {
+    val (count, size) = when (layout) {
+        GridLayoutType.COMPACT -> 4 to 4.dp
+        GridLayoutType.STANDARD -> 3 to 6.dp
+        GridLayoutType.SPACED -> 3 to 6.dp
+        GridLayoutType.LARGE_CELLS -> 2 to 10.dp
+    }
+    val spacing = if (layout == GridLayoutType.SPACED) 4.dp else 2.dp
+
+    Column(verticalArrangement = Arrangement.spacedBy(spacing), horizontalAlignment = Alignment.CenterHorizontally) {
+        repeat(count - 1) {
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                repeat(count - 1) {
+                    Box(Modifier.size(size).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), RoundedCornerShape(1.dp)))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PositionVisualPreview(position: GridPosition) {
+    Box(Modifier.fillMaxSize().padding(8.dp)) {
+        Box(
+            Modifier
+                .size(20.dp, 12.dp)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                .align(when (position) {
+                    GridPosition.TOP -> Alignment.TopCenter
+                    GridPosition.CENTER -> Alignment.Center
+                    GridPosition.BOTTOM -> Alignment.BottomCenter
+                })
+        )
+    }
+}
+
+private fun getShape(shape: GridShape): Shape {
+    return when (shape) {
+        GridShape.SQUARE -> RectangleShape
+        GridShape.ROUNDED_SQUARE -> RoundedCornerShape(4.dp)
+        GridShape.CIRCLE -> CircleShape
+        GridShape.DIAMOND -> CutCornerShape(50)
+        GridShape.PIXEL -> RectangleShape
+        GridShape.BUBBLE -> RoundedCornerShape(8.dp)
+        GridShape.DOT -> CircleShape
     }
 }
 
@@ -323,7 +480,12 @@ fun StudioSection(title: String, icon: ImageVector, content: @Composable () -> U
 }
 
 @Composable
-fun StudioOptionCard(title: String, isSelected: Boolean, onClick: () -> Unit) {
+fun StudioOptionCard(
+    title: String, 
+    isSelected: Boolean, 
+    onClick: () -> Unit,
+    visual: @Composable BoxScope.() -> Unit
+) {
     val borderColor by animateColorAsState(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, label = "BorderColor")
     val containerColor by animateColorAsState(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface, label = "ContainerColor")
     
@@ -342,8 +504,11 @@ fun StudioOptionCard(title: String, isSelected: Boolean, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            )
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                visual()
+            }
             Spacer(Modifier.height(12.dp))
             Text(
                 text = title,
@@ -352,52 +517,6 @@ fun StudioOptionCard(title: String, isSelected: Boolean, onClick: () -> Unit) {
                 maxLines = 1,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
-        }
-    }
-}
-
-@Composable
-fun PaletteSelector(selectedPalette: String, onPaletteSelected: (String, Int) -> Unit) {
-    val palettes = listOf(
-        "Matcha Green" to 0xFF4CAF50.toInt(),
-        "Mint Fresh" to 0xFF58D68D.toInt(),
-        "Emerald Focus" to 0xFF00C853.toInt(),
-        "Soft Pastel" to 0xFFFF80AB.toInt(),
-        "Forest Calm" to 0xFF2E7D32.toInt(),
-        "Dark Neon" to 0xFFBB86FC.toInt()
-    )
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(palettes) { (name, color) ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onPaletteSelected(name, color) }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color(color))
-                        .border(
-                            if (selectedPalette == name) 3.dp else 0.dp,
-                            if (selectedPalette == name) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (selectedPalette == name) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    name, 
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (selectedPalette == name) FontWeight.Bold else FontWeight.Medium
-                )
-            }
         }
     }
 }

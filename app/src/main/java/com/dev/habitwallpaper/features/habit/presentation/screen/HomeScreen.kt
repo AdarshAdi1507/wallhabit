@@ -3,6 +3,8 @@ package com.dev.habitwallpaper.features.habit.presentation.screen
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,8 +25,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.habitwallpaper.core.designsystem.HabitColors
@@ -33,6 +37,8 @@ import com.dev.habitwallpaper.domain.model.Habit
 import com.dev.habitwallpaper.domain.model.TrackingType
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeUiState
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteUiState
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteViewModel
 import com.dev.habitwallpaper.features.habit.presentation.component.MiniWallpaperPreview
 import com.dev.habitwallpaper.features.habit.presentation.util.icon
 import java.time.LocalDate
@@ -41,11 +47,13 @@ import java.time.LocalDate
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    quoteViewModel: QuoteViewModel,
     onAddHabit: () -> Unit,
     onHabitClick: (Long) -> Unit,
     onWallpaperClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val quoteUiState by quoteViewModel.uiState.collectAsState()
     var habitForNumericInput by remember { mutableStateOf<Habit?>(null) }
 
     Scaffold(
@@ -91,6 +99,7 @@ fun HomeScreen(
         } else {
             HomeContent(
                 uiState = uiState,
+                quoteUiState = quoteUiState,
                 innerPadding = innerPadding,
                 onToggle = { habit ->
                     if (habit.trackingType == TrackingType.NUMERIC && !habit.isCompletedToday) {
@@ -130,6 +139,7 @@ fun UserGreeting(name: String) {
 @Composable
 fun HomeContent(
     uiState: HomeUiState,
+    quoteUiState: QuoteUiState,
     innerPadding: PaddingValues,
     onToggle: (Habit) -> Unit,
     onHabitClick: (Long) -> Unit,
@@ -147,6 +157,11 @@ fun HomeContent(
             item(key = "greeting") {
                 UserGreeting(name = name)
             }
+        }
+
+        // 0b. Motivational quote card
+        item(key = "quote") {
+            MotivationCard(quoteUiState = quoteUiState)
         }
 
         // 1. Focus Habit Section
@@ -190,6 +205,72 @@ fun HomeContent(
 
         item {
             Spacer(modifier = Modifier.height(80.dp)) // Extra space for bottom nav
+        }
+    }
+}
+
+@Composable
+fun MotivationCard(quoteUiState: QuoteUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        when (quoteUiState) {
+            is QuoteUiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+
+            is QuoteUiState.Success -> {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(animationSpec = tween(600))
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.FormatQuote,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = quoteUiState.quote.text,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 24.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "— ${quoteUiState.quote.author}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
+                    }
+                }
+            }
+
+            is QuoteUiState.Error -> {
+                // Silent — the card simply stays empty on a persistent error
+            }
         }
     }
 }
@@ -635,7 +716,7 @@ fun EmptyState(onAddHabit: () -> Unit, innerPadding: PaddingValues = PaddingValu
             )
             Text(
                 "Create a habit and set it as your wallpaper to stay focused.",
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(vertical = 8.dp)
             )

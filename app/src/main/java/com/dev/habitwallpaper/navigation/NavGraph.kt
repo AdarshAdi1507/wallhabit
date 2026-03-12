@@ -21,6 +21,7 @@ import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewMo
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.OnboardingViewModel
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 @Composable
@@ -48,8 +49,10 @@ fun NavGraph(
 
         composable(Screen.Home.route) {
             val viewModel: HomeViewModel = hiltViewModel()
+            val quoteViewModel: QuoteViewModel = hiltViewModel()
             HomeScreen(
                 viewModel = viewModel,
+                quoteViewModel = quoteViewModel,
                 onAddHabit = {
                     navController.navigate(Screen.HabitSetup.route)
                 },

@@ -3,6 +3,7 @@ package com.dev.habitwallpaper.di
 import android.content.Context
 import androidx.room.Room
 import com.dev.habitwallpaper.data.local.HabitDatabase
+import com.dev.habitwallpaper.data.local.dao.AchievementDao
 import com.dev.habitwallpaper.data.local.dao.HabitDao
 import dagger.Module
 import dagger.Provides
@@ -22,7 +23,9 @@ object DatabaseModule {
             context,
             HabitDatabase::class.java,
             HabitDatabase.DATABASE_NAME
-        ).build()
+        )
+        .fallbackToDestructiveMigration() // Added for development simplicity during schema changes
+        .build()
     }
 
     @Provides
@@ -30,5 +33,10 @@ object DatabaseModule {
     fun provideHabitDao(database: HabitDatabase): HabitDao {
         return database.habitDao()
     }
-}
 
+    @Provides
+    @Singleton
+    fun provideAchievementDao(database: HabitDatabase): AchievementDao {
+        return database.achievementDao()
+    }
+}

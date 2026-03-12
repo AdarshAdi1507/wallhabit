@@ -3,7 +3,10 @@ package com.dev.habitwallpaper.features.habit.presentation.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dev.habitwallpaper.domain.model.Achievement
 import com.dev.habitwallpaper.domain.model.Habit
+import com.dev.habitwallpaper.domain.model.Milestone
+import com.dev.habitwallpaper.domain.model.MilestoneThresholds
 import com.dev.habitwallpaper.domain.repository.HabitRepository
 import com.dev.habitwallpaper.domain.usecase.GetHabitUseCase
 import com.dev.habitwallpaper.domain.usecase.SetWallpaperHabitUseCase
@@ -15,8 +18,15 @@ import javax.inject.Inject
 
 data class HabitDetailUiState(
     val habit: Habit? = null,
-    val isLoading: Boolean = true
+    val achievements: List<Achievement> = emptyList(),
+    val isLoading: Boolean = true,
+    val nextMilestone: Milestone? = null,
+    val daysToNextMilestone: Int? = null
 )
+
+sealed class HabitDetailEvent {
+    data class AchievementReached(val achievement: Achievement) : HabitDetailEvent()
+}
 
 @HiltViewModel
 class HabitDetailViewModel @Inject constructor(
@@ -31,22 +41,46 @@ class HabitDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HabitDetailUiState())
     val uiState: StateFlow<HabitDetailUiState> = _uiState.asStateFlow()
 
+    private val _eventFlow = MutableSharedFlow<HabitDetailEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
     init {
         loadHabit()
+        loadAchievements()
     }
 
     private fun loadHabit() {
         getHabitUseCase(habitId)
             .onEach { habit ->
-                _uiState.update { it.copy(habit = habit, isLoading = false) }
+                habit?.let { h ->
+                    val next = MilestoneThresholds.getNextMilestone(h.currentStreak)
+                    val daysRemaining = next?.let { it.value - h.currentStreak }
+                    _uiState.update { it.copy(
+                        habit = h, 
+                        isLoading = false,
+                        nextMilestone = next,
+                        daysToNextMilestone = daysRemaining
+                    ) }
+                } ?: _uiState.update { it.copy(isLoading = false) }
             }
             .launchIn(viewModelScope)
     }
 
-    fun toggleCompletion() {
+    private fun loadAchievements() {
+        repository.getAchievementsForHabit(habitId)
+            .onEach { achievements ->
+                _uiState.update { it.copy(achievements = achievements) }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun toggleCompletion(date: LocalDate = LocalDate.now()) {
         val currentHabit = _uiState.value.habit ?: return
         viewModelScope.launch {
-            repository.toggleCompletion(currentHabit.id, LocalDate.now())
+            val achievement = repository.toggleCompletion(currentHabit.id, date)
+            if (achievement != null) {
+                _eventFlow.emit(HabitDetailEvent.AchievementReached(achievement))
+            }
         }
     }
 

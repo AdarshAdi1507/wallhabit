@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,7 +29,8 @@ import com.dev.habitwallpaper.features.habit.presentation.component.MiniWallpape
 @Composable
 fun WallpaperSelectionScreen(
     viewModel: WallpaperSelectionViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToCustomization: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -39,6 +41,11 @@ fun WallpaperSelectionScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToCustomization) {
+                        Icon(Icons.Default.Settings, contentDescription = "Customize")
                     }
                 }
             )

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HabitWallpaper</string>
+    <string name="app_name">Wall-Habtify</string>
     <array name="com_google_android_gms_fonts_certs">
         <item>@array/com_google_android_gms_fonts_certs_dev</item>
         <item>@array/com_google_android_gms_fonts_certs_prod</item>

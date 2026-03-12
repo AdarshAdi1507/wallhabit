@@ -15,6 +15,7 @@ import com.dev.habitwallpaper.features.habit.presentation.screen.HabitsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.HomeScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.InsightsScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.OnboardingScreen
+import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperCustomizationScreen
 import com.dev.habitwallpaper.features.habit.presentation.screen.WallpaperSelectionScreen
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HabitsViewModel
@@ -22,6 +23,7 @@ import com.dev.habitwallpaper.features.habit.presentation.viewmodel.HomeViewMode
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.InsightsViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.OnboardingViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.QuoteViewModel
+import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperCustomizationViewModel
 import com.dev.habitwallpaper.features.habit.presentation.viewmodel.WallpaperSelectionViewModel
 
 @Composable
@@ -85,6 +87,19 @@ fun NavGraph(
         composable(Screen.Wallpaper.route) {
             val viewModel: WallpaperSelectionViewModel = hiltViewModel()
             WallpaperSelectionScreen(
+                viewModel = viewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToCustomization = {
+                    navController.navigate(Screen.WallpaperCustomization.route)
+                }
+            )
+        }
+
+        composable(Screen.WallpaperCustomization.route) {
+            val viewModel: WallpaperCustomizationViewModel = hiltViewModel()
+            WallpaperCustomizationScreen(
                 viewModel = viewModel,
                 onBack = {
                     navController.popBackStack()

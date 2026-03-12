@@ -9,7 +9,16 @@ interface UserPreferencesRepository {
     /** Returns true if onboarding has been completed (name saved). */
     val isOnboardingCompleted: Flow<Boolean>
 
+    /**
+     * True once we have already asked the user for POST_NOTIFICATIONS permission.
+     * Used to avoid showing the rationale dialog on every launch.
+     */
+    val notificationPermissionRequested: Flow<Boolean>
+
     /** Persists the user's name and marks onboarding as complete. */
     suspend fun saveUserName(name: String)
+
+    /** Records that we have already prompted the user for the notification permission. */
+    suspend fun markNotificationPermissionRequested()
 }
 

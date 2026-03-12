@@ -127,6 +127,17 @@ dependencies {
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
+    // Retrofit + Moshi (quote network)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi.kotlin)
+
+    // WorkManager + Hilt-Work
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

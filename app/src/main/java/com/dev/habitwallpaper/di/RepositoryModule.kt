@@ -1,8 +1,10 @@
 package com.dev.habitwallpaper.di
 
 import com.dev.habitwallpaper.data.repository.HabitRepositoryImpl
+import com.dev.habitwallpaper.data.repository.QuoteRepositoryImpl
 import com.dev.habitwallpaper.data.repository.UserPreferencesRepositoryImpl
 import com.dev.habitwallpaper.domain.repository.HabitRepository
+import com.dev.habitwallpaper.domain.repository.QuoteRepository
 import com.dev.habitwallpaper.domain.repository.UserPreferencesRepository
 import dagger.Binds
 import dagger.Module
@@ -21,5 +23,9 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserPreferencesRepository(impl: UserPreferencesRepositoryImpl): UserPreferencesRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindQuoteRepository(impl: QuoteRepositoryImpl): QuoteRepository
 }
 

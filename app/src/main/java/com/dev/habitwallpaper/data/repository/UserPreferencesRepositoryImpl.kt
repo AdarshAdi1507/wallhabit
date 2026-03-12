@@ -25,6 +25,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     private object Keys {
         val USER_NAME = stringPreferencesKey("user_name")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val NOTIFICATION_PERMISSION_REQUESTED = booleanPreferencesKey("notification_permission_requested")
     }
 
     override val userName: Flow<String?> = context.userPreferencesDataStore.data
@@ -33,10 +34,19 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     override val isOnboardingCompleted: Flow<Boolean> = context.userPreferencesDataStore.data
         .map { prefs -> prefs[Keys.ONBOARDING_COMPLETED] ?: false }
 
+    override val notificationPermissionRequested: Flow<Boolean> = context.userPreferencesDataStore.data
+        .map { prefs -> prefs[Keys.NOTIFICATION_PERMISSION_REQUESTED] ?: false }
+
     override suspend fun saveUserName(name: String) {
         context.userPreferencesDataStore.edit { prefs ->
             prefs[Keys.USER_NAME] = name.trim()
             prefs[Keys.ONBOARDING_COMPLETED] = true
+        }
+    }
+
+    override suspend fun markNotificationPermissionRequested() {
+        context.userPreferencesDataStore.edit { prefs ->
+            prefs[Keys.NOTIFICATION_PERMISSION_REQUESTED] = true
         }
     }
 }

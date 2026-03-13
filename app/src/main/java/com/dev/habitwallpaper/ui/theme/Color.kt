@@ -14,7 +14,7 @@ val MutedSageText = HabitColors.SECONDARY_TEXT.toCompose()
 val DarkGreenBlack = HabitColors.DARK_GREEN_BLACK.toCompose()
 val GlowEmerald = HabitColors.GLOW_EMERALD.toCompose()
 
-// Heatmap Colors
+// Heatmap Color
 val GridEmpty = HabitColors.GRID_EMPTY.toCompose()
 val GridLow = HabitColors.GRID_LOW.toCompose()
 val GridMedium = HabitColors.GRID_MEDIUM.toCompose()
